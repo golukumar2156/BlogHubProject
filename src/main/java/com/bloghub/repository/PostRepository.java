@@ -8,6 +8,6 @@ import com.bloghub.entity.Author;
 import com.bloghub.entity.Post;
 
 public interface PostRepository  extends JpaRepository<Post, Long> {
-     List<Post> findByTitleContainnigOrContentContainning(String title,String content);
+	 List<Post> findByTitleContainingOrContentContaining(String title, String content);
      List<Post> findByAuthor(Author author);
 }

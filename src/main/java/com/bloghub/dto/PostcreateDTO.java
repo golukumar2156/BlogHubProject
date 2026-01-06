@@ -12,8 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PostcreateDTO {
-    
-	   private Long ID;
+	    
 	   @NotBlank(message="Title is required")
 	   private String title;
 	   @NotBlank(message = "Content Shoult be required")

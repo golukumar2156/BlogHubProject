@@ -17,7 +17,7 @@ public class AuthorRegisterDTO {
 	@NotBlank(message = "Role should be required")
     private String role;
 	
-	@NotBlank(message = "Email should  be required")
+	@NotBlank(message = "Email should be required")
 	@Email(message = "Email should be valid format")
     private String email;
     private String about;    

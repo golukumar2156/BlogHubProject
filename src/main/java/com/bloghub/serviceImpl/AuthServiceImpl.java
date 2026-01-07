@@ -1,7 +1,6 @@
 package com.bloghub.serviceImpl;
 
 import org.springframework.stereotype.Service;
-
 import com.bloghub.dto.AuthResponseDTO;
 import com.bloghub.dto.LoginRequest;
 import com.bloghub.dto.RegisterRequestDTO;
@@ -17,8 +16,8 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 public class AuthServiceImpl implements AuthService {
+	
 	private final AuthorRepository authorRepository;
-
 	
 	public AuthResponseDTO register(RegisterRequestDTO request,HttpSession session) {
 		
@@ -77,5 +76,22 @@ public class AuthServiceImpl implements AuthService {
 		                "Login successfully"
 		        );		
 				
-		   }
+	 }
+	
+	public AuthResponseDTO getCurrentUser(HttpSession session) {
+				 Long userId=(Long) session.getAttribute("userId");
+				 if(userId==null) {
+					 throw new ResourceNotFoundException("No user loged In!");
+				   }
+				 String userName=(String)session.getAttribute("username");
+				 String userEmail=(String)session.getAttribute("userEmail");
+				 String userRole=(String) session.getAttribute("userRole");
+				 return new AuthResponseDTO(userId,userName,userEmail,userRole,"Current User Information");
+	 }
+
+	@Override
+	public void Logout(HttpSession session) {
+		         session.invalidate();		
+	}
+	
 }

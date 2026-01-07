@@ -9,5 +9,6 @@ public interface AuthService {
 	
 	public AuthResponseDTO register(RegisterRequestDTO request,HttpSession session);	
 	public AuthResponseDTO login(LoginRequest request, HttpSession session);
-	
+	public AuthResponseDTO getCurrentUser(HttpSession session);
+	public void Logout(HttpSession session);
 }

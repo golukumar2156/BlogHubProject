@@ -1,7 +1,14 @@
 package com.bloghub.exception;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -18,5 +25,22 @@ public class GlobalExceptionhandle {
 	public ResponseEntity<ErrorResponse>  resourceAlreadyExists(ResourceAlreadyExistException ex){
 	          ErrorResponse ob= new ErrorResponse(HttpStatus.CONFLICT.value(),ex.getMessage());
 	          return new ResponseEntity<>(ob,HttpStatus.CONFLICT);
+	}
+	
+	@ExceptionHandler(value=MethodArgumentNotValidException.class)
+	public ResponseEntity<Map<String, String>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex){
+		Map<String ,String> errorMap=new HashMap<>();
+		BindingResult br=ex.getBindingResult();
+		List<FieldError> errorList=br.getFieldErrors();
+		for(FieldError ferror:errorList) {
+			errorMap.put(ferror.getField(),ferror.getDefaultMessage());
+		}		
+		return new ResponseEntity<Map<String,String>>(errorMap,HttpStatus.BAD_REQUEST);
+	}
+	
+	@ExceptionHandler(value=Exception.class)
+	public ResponseEntity<ErrorResponse> handleException(Exception ex){
+		 ErrorResponse re=new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),ex.getMessage());
+		 return new ResponseEntity<>(re,HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 }

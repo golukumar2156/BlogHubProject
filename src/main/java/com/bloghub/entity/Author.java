@@ -23,7 +23,7 @@ import lombok.Setter;
 public class Author {
    @Id
    @GeneratedValue(strategy = GenerationType.IDENTITY)
-   private Long ID;
+   private Long id;
    private String name;
    @Column(unique=true)
    private String email;
@@ -31,7 +31,7 @@ public class Author {
    private String about;
    
    @Column(nullable = false)
-   private String role="USER";
+   private String role;
    @OneToMany(mappedBy ="author", cascade =CascadeType.ALL)
    List<Post> postsuthors; 
    

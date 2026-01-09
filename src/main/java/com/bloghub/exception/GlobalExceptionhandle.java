@@ -27,6 +27,12 @@ public class GlobalExceptionhandle {
 	          return new ResponseEntity<>(ob,HttpStatus.CONFLICT);
 	}
 	
+	@ExceptionHandler(NotAllowedhandleException.class)
+	public ResponseEntity<ErrorResponse>  NotallowedhandleException(NotAllowedhandleException ex){
+	          ErrorResponse ob= new ErrorResponse(HttpStatus.BAD_REQUEST.value(),ex.getMessage());
+	          return new ResponseEntity<>(ob,HttpStatus.BAD_REQUEST);
+	}
+	
 	@ExceptionHandler(value=MethodArgumentNotValidException.class)
 	public ResponseEntity<Map<String, String>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex){
 		Map<String ,String> errorMap=new HashMap<>();

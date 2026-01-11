@@ -6,11 +6,14 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
 @RestControllerAdvice
 public class GlobalExceptionhandle {
@@ -49,4 +52,24 @@ public class GlobalExceptionhandle {
 		 ErrorResponse re=new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),ex.getMessage());
 		 return new ResponseEntity<>(re,HttpStatus.INTERNAL_SERVER_ERROR);
 	}
+	
+	
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+	    
+	    String message = "Invalid request body";
+
+	    // Check if the cause is enum deserialization
+	    if(ex.getCause() instanceof InvalidFormatException invalidEx) {
+	        if(invalidEx.getTargetType().isEnum()) {
+	            message = "Invalid value '" + invalidEx.getValue() + "' for field '" 
+	                      + invalidEx.getPath().get(0).getFieldName() 
+	                      + "'. Accepted values: " + List.of(invalidEx.getTargetType().getEnumConstants());
+	        }
+	    }
+
+	    ErrorResponse re = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), message);
+	    return new ResponseEntity<>(re, HttpStatus.BAD_REQUEST);
+	}
+	
 }

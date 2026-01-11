@@ -1,4 +1,4 @@
-package com.bloghub.dto;
+package com.bloghub.request.payload.dto;
 
 import java.time.LocalDateTime;
 import jakarta.validation.constraints.Min;

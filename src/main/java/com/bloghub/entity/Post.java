@@ -28,11 +28,11 @@ public class Post {
    private LocalDateTime createdAt;
    
    @ManyToOne(fetch = FetchType.LAZY)
-   @JoinColumn(name = "author_ID",nullable = false)
-   private Author author;
+   @JoinColumn(name = "author_Id",nullable = false)
+   private User author;
    
    @ManyToOne(fetch = FetchType.LAZY)
-   @JoinColumn(name = "categories_ID", nullable=false)
+   @JoinColumn(name = "categories_Id", nullable=false)
    private Category category;
    
 }

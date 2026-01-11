@@ -7,10 +7,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.bloghub.dto.LoginRequest;
-import com.bloghub.dto.RegisterRequestDTO;
 import com.bloghub.exception.NotAllowedhandleException;
-import com.bloghub.responsepayload.dto.AuthResponse;
+import com.bloghub.request.payload.dto.UserLoginRequestDTO;
+import com.bloghub.request.payload.dto.UserRegisterRequestDTO;
+import com.bloghub.response.payload.dto.AuthResponse;
 import com.bloghub.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -24,7 +24,7 @@ public class AuthController {
     
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(
-    		 @Valid @RequestBody RegisterRequestDTO request
+    		 @Valid @RequestBody UserRegisterRequestDTO request
     ) throws NotAllowedhandleException {
 
         AuthResponse response = authServiceImpl.register(request);
@@ -33,7 +33,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
-    		 @Valid  @RequestBody LoginRequest request
+    		 @Valid  @RequestBody UserLoginRequestDTO request
     ) throws NotAllowedhandleException {
 
         AuthResponse response = authServiceImpl.login(request);

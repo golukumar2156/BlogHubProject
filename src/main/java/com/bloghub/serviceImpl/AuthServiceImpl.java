@@ -11,14 +11,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.bloghub.configrations.JwtProvider;
-import com.bloghub.dto.LoginRequest;
-import com.bloghub.dto.RegisterRequestDTO;
-import com.bloghub.entity.Author;
+import com.bloghub.domain.UserRole;
+import com.bloghub.entity.User;
 import com.bloghub.exception.NotAllowedhandleException;
 import com.bloghub.exception.ResourceAlreadyExistException;
-import com.bloghub.mapper.Authormapper;
-import com.bloghub.repository.AuthorRepository;
-import com.bloghub.responsepayload.dto.AuthResponse;
+import com.bloghub.mapper.UserMapper;
+import com.bloghub.repository.UserRepository;
+import com.bloghub.request.payload.dto.UserLoginRequestDTO;
+import com.bloghub.request.payload.dto.UserRegisterRequestDTO;
+import com.bloghub.response.payload.dto.AuthResponse;
 import com.bloghub.service.AuthService;
 
 import lombok.AllArgsConstructor;
@@ -29,43 +30,40 @@ import lombok.Builder;
 @Builder
 public class AuthServiceImpl implements AuthService {
 	
-    private final AuthorRepository authorRepository;
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final CustomUserImplementation customUserImplementation;
     
 	@Override
-public AuthResponse register(RegisterRequestDTO request) throws NotAllowedhandleException  {
+public AuthResponse register(UserRegisterRequestDTO request) throws NotAllowedhandleException  {
 		  
-		// Step 1: Check if email already taken		
-				if(authorRepository.existsByEmail(request.getEmail())) {
+		      // Step 1: Check if email already taken	
+		
+				if(userRepository.existsByEmail(request.getEmail())) {
 					throw new ResourceAlreadyExistException("Email Already register ");
 				}
-				   //  role validation
-			    if (request.getRole() != null &&
-			        !"USER".equalsIgnoreCase(request.getRole())) {
-			        throw new NotAllowedhandleException(
-			            "Only USER role is allowed at the moment"
-			        );
-			    }
-				 
-					Author author=new Author();
-					author.setName(request.getName());
-					author.setEmail(request.getEmail());
-					author.setPassword(passwordEncoder.encode(request.getPassword()));
-					author.setAbout(request.getAbout());
-					author.setRole(request.getRole());
-					Author savedAuthor=authorRepository.save(author);
+				
+               // Step 2: role validation
+				if(request.getRole().equals(UserRole.ADMIN)){
+		            throw new NotAllowedhandleException("Role admin is not allowed");
+		        }
+				
+			    User user =UserMapper.toEntity(request);
+			    // Encode password
+			    user.setPassword(passwordEncoder.encode(user.getPassword()));
+			    
+			    User saveduser=userRepository.save(user);
 					
 					  Authentication authentication = new UsernamePasswordAuthenticationToken(
-							  savedAuthor.getEmail(),
-						        savedAuthor.getPassword());
+							  saveduser.getEmail(),
+						        saveduser.getPassword());
 				        SecurityContextHolder.getContext().setAuthentication(authentication);
 				        String jwt = jwtProvider.generateToken(authentication);
 
 				        return AuthResponse.builder()
 				                .token(jwt)
-				                .author(Authormapper.toDTO(savedAuthor))
+				                .user(UserMapper.toDTO(saveduser))
 				                .message("User registered successfully")				               
 				                .build();
 
@@ -88,7 +86,7 @@ public AuthResponse register(RegisterRequestDTO request) throws NotAllowedhandle
 
 
    @Override
-   public AuthResponse login(LoginRequest req) throws NotAllowedhandleException {
+   public AuthResponse login(UserLoginRequestDTO req) throws NotAllowedhandleException {
 	    // Extract email & password from request DTO
 	    String email = req.getEmail();
 	    String password = req.getPassword();  		
@@ -98,14 +96,18 @@ public AuthResponse register(RegisterRequestDTO request) throws NotAllowedhandle
 	        String role =  authorities.iterator().next().getAuthority();
 	        String token = jwtProvider.generateToken(authentication);
 	        // Get Author entity from DB
-	        Author user = authorRepository.findByEmail(email);
+	        User user = userRepository.findByEmail(email);
 	        		if(user==null) {
 	        		  throw new NotAllowedhandleException("User not found");	
 	        		}
-
+	        		
+	        		 //  Update lastLogin
+	        	    user.setLastLogin(java.time.LocalDateTime.now());  // or new Date() if using java.util.Date
+	        	    userRepository.save(user); // Save the updated lastLogin
+	        	    
 	        return AuthResponse.builder()
 	                .token(token)
-	                .author(Authormapper.toDTO(user))
+	                .user(UserMapper.toDTO(user))
 	                .message("Login successful")
 	                .build();
    }

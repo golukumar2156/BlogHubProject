@@ -1,4 +1,4 @@
-package com.bloghub.dto;
+package com.bloghub.request.payload.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

@@ -1,6 +1,4 @@
-package com.bloghub.responsepayload.dto;
-
-import com.bloghub.dto.AuthResponseDTO;
+package com.bloghub.response.payload.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,5 +13,5 @@ public class AuthResponse {
 
     private String token;
     private String message;
-    private AuthResponseDTO author;
+    private UserResponseDTO user;
 }

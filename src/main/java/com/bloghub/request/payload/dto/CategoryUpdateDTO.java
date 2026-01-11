@@ -1,4 +1,4 @@
-package com.bloghub.dto;
+package com.bloghub.request.payload.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

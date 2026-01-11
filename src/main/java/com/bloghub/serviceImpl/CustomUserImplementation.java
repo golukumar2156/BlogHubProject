@@ -2,7 +2,6 @@ package com.bloghub.serviceImpl;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -12,19 +11,19 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.bloghub.entity.Author;
-import com.bloghub.repository.AuthorRepository;
+import com.bloghub.entity.User;
+import com.bloghub.repository.UserRepository;
 
 @Service
 public class CustomUserImplementation implements UserDetailsService {
 
     @Autowired
-    private  AuthorRepository authorRepository;
+    private  UserRepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        Author user = authorRepository.findByEmail(username);
+        User user = userRepository.findByEmail(username);
 
         if (user==null) {
             throw new UsernameNotFoundException("user doesn't exist with email " + username);

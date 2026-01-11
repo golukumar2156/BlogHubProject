@@ -1,6 +1,6 @@
 package com.bloghub.domain;
 
 public enum UserRole {
-      USER,
+      AUTHOR,
       ADMIN
 }

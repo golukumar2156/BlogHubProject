@@ -1,4 +1,4 @@
-package com.bloghub.dto;
+package com.bloghub.response.payload.dto;
 
 import java.time.LocalDateTime;
 

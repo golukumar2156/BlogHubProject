@@ -41,9 +41,13 @@ public AuthResponse register(RegisterRequestDTO request) throws NotAllowedhandle
 				if(authorRepository.existsByEmail(request.getEmail())) {
 					throw new ResourceAlreadyExistException("Email Already register ");
 				}
-				  if("ADMIN".equalsIgnoreCase(request.getRole())) {
-				        throw new NotAllowedhandleException("Role admin is not allowed");
-				    }
+				   //  role validation
+			    if (request.getRole() != null &&
+			        !"USER".equalsIgnoreCase(request.getRole())) {
+			        throw new NotAllowedhandleException(
+			            "Only USER role is allowed at the moment"
+			        );
+			    }
 				 
 					Author author=new Author();
 					author.setName(request.getName());

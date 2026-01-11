@@ -1,5 +1,8 @@
 package com.bloghub.entity;
+import java.time.LocalDateTime;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -29,6 +32,10 @@ public class Author {
    private String email;
    private String password;
    private String about;
+   
+   @CreationTimestamp
+   @Column(updatable = false)
+   private LocalDateTime createdAt;
    
    @Column(nullable = false)
    private String role;

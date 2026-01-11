@@ -26,5 +26,5 @@ public class RegisterRequestDTO {
 	private String role;
 	
 	@NotBlank(message = "About section is required")
-    private String about;    
+    private String about;  
 }

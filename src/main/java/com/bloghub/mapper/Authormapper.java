@@ -21,6 +21,7 @@ public class Authormapper {
 		  rdto.setEmail(res.getEmail());
 		  rdto.setAbout(res.getAbout());
 		  rdto.setRole(res.getRole());
+		  rdto.setCreatedAt(res.getCreatedAt());
 		  return rdto;
 	}
 	

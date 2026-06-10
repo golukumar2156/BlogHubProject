@@ -58,7 +58,7 @@ const LoginPage = () => {
             <span className="font-extrabold text-xl">BlogHub</span>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-1">Welcome back</h1>
-          <p className="text-sm text-muted-foreground">Apne account mein login karo</p>
+          <p className="text-sm text-muted-foreground">Log in to your account.</p>
         </div>
 
         {/* Card */}
@@ -69,7 +69,7 @@ const LoginPage = () => {
             <div className="flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/30
                             text-emerald-600 rounded-xl px-4 py-3 text-sm font-medium mb-5">
               <CheckCircle className="w-4 h-4 flex-shrink-0" />
-              Login successful! Redirect ho raha hai…
+              Login successful!…
             </div>
           )}
 
@@ -148,7 +148,7 @@ const LoginPage = () => {
           <p className="text-center text-sm text-muted-foreground">
             Account nahi hai?{" "}
             <Link to="/register" className="text-primary font-semibold hover:underline underline-offset-4">
-              Register karo
+             click To Register 
             </Link>
           </p>
         </div>
@@ -156,7 +156,7 @@ const LoginPage = () => {
         {/* Back to home */}
         <p className="text-center mt-5 text-sm text-muted-foreground">
           <Link to="/" className="hover:text-foreground transition-colors flex items-center justify-center gap-1">
-            ← Home pe wapas jao
+            ← Back To HomePage
           </Link>
         </p>
       </div>

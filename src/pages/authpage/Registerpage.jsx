@@ -83,7 +83,7 @@ const RegisterPage = () => {
             <div className="flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/30
                             text-emerald-600 rounded-xl px-4 py-3 text-sm font-medium mb-5">
               <CheckCircle className="w-4 h-4 flex-shrink-0" />
-              OTP bhej diya! Email check karo…
+               OTP sent! Please check your email.
             </div>
           )}
 
@@ -104,7 +104,7 @@ const RegisterPage = () => {
               </label>
               <div className="relative">
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input placeholder="Apna poora naam" value={form.fullName} onChange={set("fullName")}
+                <input placeholder="Enter your fullname" value={form.fullName} onChange={set("fullName")}
                   className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-border/50
                              bg-muted/30 outline-none focus:border-primary focus:bg-background transition-colors" />
               </div>
@@ -130,7 +130,7 @@ const RegisterPage = () => {
               </label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type={showPwd ? "text" : "password"} placeholder="Min 6 characters"
+                <input type={showPwd ? "text" : "password"} placeholder="Enter your password"
                   value={form.password} onChange={set("password")}
                   className="w-full pl-10 pr-11 py-2.5 text-sm rounded-xl border border-border/50
                              bg-muted/30 outline-none focus:border-primary focus:bg-background transition-colors" />
@@ -148,7 +148,7 @@ const RegisterPage = () => {
               </label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type={showConfirm ? "text" : "password"} placeholder="Password dobara daalo"
+                <input type={showConfirm ? "text" : "password"} placeholder="Re-enter your password"
                   value={form.confirmPassword} onChange={set("confirmPassword")}
                   className="w-full pl-10 pr-11 py-2.5 text-sm rounded-xl border border-border/50
                              bg-muted/30 outline-none focus:border-primary focus:bg-background transition-colors" />
@@ -166,7 +166,7 @@ const RegisterPage = () => {
               </label>
               <div className="relative">
                 <Info className="absolute left-3.5 top-3 w-4 h-4 text-muted-foreground" />
-                <textarea placeholder="Apne baare mein kuch likhein…" value={form.about} onChange={set("about")}
+                <textarea placeholder="Write something about yourself…" value={form.about} onChange={set("about")}
                   rows={2}
                   className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-border/50
                              bg-muted/30 outline-none focus:border-primary focus:bg-background transition-colors resize-none" />
@@ -205,16 +205,16 @@ const RegisterPage = () => {
           </div>
 
           <p className="text-center text-sm text-muted-foreground">
-            Already account hai?{" "}
+            Do you have Already account ?{" "}
             <Link to="/login" className="text-primary font-semibold hover:underline underline-offset-4">
-              Login karo
+             click to Login
             </Link>
           </p>
         </div>
 
         <p className="text-center mt-5 text-sm text-muted-foreground">
           <Link to="/" className="hover:text-foreground transition-colors flex items-center justify-center gap-1">
-            ← Home pe wapas jao
+            ← Back To HomePage
           </Link>
         </p>
       </div>

@@ -38,10 +38,10 @@ export default function CreateBlogPage() {
       await axiosInstance.post("/posts", {
         title:      title.trim(),
         content:    content.trim(),
-        categoryID: Number(categoryId),   // ✅ capital ID
-        authorID:   Number(user?.id),     // ✅ required by backend
+        categoryID: Number(categoryId),   //  capital ID
+        authorID:   Number(user?.id),     //  required by backend
       })
-      showMsg("success", "Blog successfully publish ho gaya! 🎉")
+      showMsg("success", "Blog is successfully publish ! ")
       setTimeout(() => navigate("/my-blogs"), 1200)
     } catch (err) {
       showMsg("error", err?.response?.data?.message || err?.response?.data?.error || "Blog publish nahi hua: " + (err?.response?.status || "Network error"))

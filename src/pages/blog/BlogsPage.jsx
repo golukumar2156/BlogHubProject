@@ -323,12 +323,10 @@ export default function BlogsPage() {
     } catch (err) {
       const status = err?.response?.status
       if (status === 401) {
-        setError("Server error 401 — backend mein GET /posts & /categories ko permitAll karo SecurityConfig mein")
-      } else if (status) {
-        setError(`Server error ${status} — backend check karo`)
+         setError("Unauthorized (401) — make sure GET /posts and /categories are public in SecurityConfig.")      } else if (status) {
+        setError(`Server error ${status} — please check your backend`)
       } else {
-        setError("Backend se connect nahi ho paya. Check karo server port 7000 pe chal raha hai.")
-      }
+        setError(`Server error ${status} — please check your backend.`)      }
       setPosts([])
     } finally {
       setLoading(false)
@@ -518,7 +516,7 @@ export default function BlogsPage() {
               <BookOpen className="w-12 h-12 mx-auto mb-4 text-muted-foreground/30" />
               <p className="font-semibold text-lg mb-1">Koi blog nahi mila</p>
               <p className="text-sm text-muted-foreground mb-5">
-                {hasFilters ? "Filter change karo ya clear karo." : "Abhi koi blog publish nahi hua hai."}
+                {hasFilters ? "Filter change karo ya clear karo." : "No blogs have been published yet."}
               </p>
               {hasFilters && (
                 <button onClick={clearFilters}

@@ -1,7 +1,6 @@
 import { Routes, Route } from "react-router-dom"
 import LoginPage from "../authpage/LoginPage"
 import RegisterPage from "../authpage/Registerpage"
-import { Navbar } from "../Onbordingpage/Navbar"
 import HomePage from "../Onbordingpage/HomePage"
 import VerifyOtp from "../authpage/VerifyOtp"
 const  AuthRoutes=() => {

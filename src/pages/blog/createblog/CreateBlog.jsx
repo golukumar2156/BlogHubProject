@@ -1,159 +1,182 @@
-import React, { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
-import { Upload, X, CheckCircle, AlertCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import Sidebar from "../Sidebar" // ✅ FIXED
-
-const DUMMY_CATEGORIES = [
-  { id: "1", name: "Tutorial" },
-  { id: "2", name: "CSS" },
-  { id: "3", name: "Backend" },
-  { id: "4", name: "TypeScript" },
-  { id: "5", name: "API Design" },
-]
+import { useSelector } from "react-redux"
+import { PenLine, ArrowLeft, CheckCircle, AlertCircle, Loader2, FolderOpen } from "lucide-react"
+import Sidebar from "../Sidebar"
+import axiosInstance from "@/service/axiosInstance"
 
 export default function CreateBlogPage() {
-  const [title, setTitle] = useState("")
-  const [content, setContent] = useState("")
-  const [excerpt, setExcerpt] = useState("")
-  const [categoryId, setCategoryId] = useState("")
-  const [imagePreview, setImagePreview] = useState(null)
-  const [message, setMessage] = useState(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
   const navigate = useNavigate()
+  const { user } = useSelector((s) => s.auth)
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onloadend = () => setImagePreview(reader.result)
-    reader.readAsDataURL(file)
+  const [title,       setTitle]       = useState("")
+  const [content,     setContent]     = useState("")
+  const [categoryId,  setCategoryId]  = useState("")
+  const [categories,  setCategories]  = useState([])
+  const [message,     setMessage]     = useState(null)
+  const [submitting,  setSubmitting]  = useState(false)
+
+  // Fetch categories from backend
+  useEffect(() => {
+    axiosInstance.get("/categories")
+      .then((r) => setCategories(Array.isArray(r.data) ? r.data : []))
+      .catch(() => {})
+  }, [])
+
+  const showMsg = (type, text) => {
+    setMessage({ type, text })
+    if (type === "error") setTimeout(() => setMessage(null), 4000)
   }
 
-  const handlePublish = () => {
-    if (!title || !content || !categoryId) {
-      setMessage({ type: "error", text: "Please fill all required fields" })
+  const handlePublish = async () => {
+    if (!title.trim() || !content.trim() || !categoryId) {
+      showMsg("error", "Title, content aur category sabhi required hain.")
       return
     }
-
-    setIsSubmitting(true)
-    setTimeout(() => {
-      setMessage({ type: "success", text: "Blog published (UI only)!" })
-      setIsSubmitting(false)
-      navigate("/my-blogs")
-    }, 1200)
-  }
-
-  const handleSaveDraft = () => {
-    setMessage({ type: "success", text: "Draft saved (UI only)" })
-    setTimeout(() => setMessage(null), 2000)
+    setSubmitting(true)
+    try {
+      await axiosInstance.post("/posts", {
+        title:      title.trim(),
+        content:    content.trim(),
+        categoryID: Number(categoryId),   // ✅ capital ID
+        authorID:   Number(user?.id),     // ✅ required by backend
+      })
+      showMsg("success", "Blog successfully publish ho gaya! 🎉")
+      setTimeout(() => navigate("/my-blogs"), 1200)
+    } catch (err) {
+      showMsg("error", err?.response?.data?.message || err?.response?.data?.error || "Blog publish nahi hua: " + (err?.response?.status || "Network error"))
+      setSubmitting(false)
+    }
   }
 
   return (
-    <div className="flex bg-background">
+    <div className="flex bg-background min-h-screen">
       <Sidebar />
 
-      <div className="flex-1 lg:ml-64">
-        {/* Header */}
-        <div className="h-16 border-b flex items-center px-6 justify-between sticky top-0 bg-background">
-          <h1 className="text-2xl font-bold">Create New Blog</h1>
+      <div className="flex-1 lg:ml-64 min-w-0 pt-14 lg:pt-0 flex flex-col">
 
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate(-1)}>
-              Back
-            </Button>
-
-            <Button variant="outline" onClick={handleSaveDraft}>
-              Save Draft
-            </Button>
-
-            <Button onClick={handlePublish} disabled={isSubmitting}>
-              {isSubmitting ? "Publishing..." : "Publish"}
-            </Button>
+        {/* ── HEADER ── */}
+        <header className="h-16 border-b border-border/50 flex items-center justify-between
+                           px-4 sm:px-6 lg:px-8 sticky top-0 z-40
+                           bg-background/80 backdrop-blur-md flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <PenLine className="w-5 h-5 text-primary" />
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight">Create New Blog</h1>
           </div>
-        </div>
-
-        {/* Body */}
-        <div className="p-6 max-w-4xl">
-          {message && (
-            <div
-              className={`mb-6 p-4 rounded-lg flex gap-2 ${
-                message.type === "success"
-                  ? "bg-green-500/20"
-                  : "bg-red-500/20"
-              }`}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm
+                         border border-border/50 hover:bg-muted/40 transition-colors
+                         text-muted-foreground hover:text-foreground"
             >
-              {message.type === "success" ? (
-                <CheckCircle className="text-green-500" />
-              ) : (
-                <AlertCircle className="text-red-500" />
-              )}
-              <p>{message.text}</p>
-            </div>
-          )}
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back</span>
+            </button>
+            <button
+              onClick={handlePublish}
+              disabled={submitting}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold
+                         bg-primary text-primary-foreground hover:opacity-90
+                         disabled:opacity-50 transition-opacity"
+            >
+              {submitting
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Publishing...</>
+                : <><PenLine className="w-4 h-4" /> Publish</>
+              }
+            </button>
+          </div>
+        </header>
 
-          <div className="space-y-6">
-            <Input
-              placeholder="Blog Title *"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+        {/* ── BODY ── */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full space-y-5">
 
-            <Input
-              placeholder="Excerpt"
-              value={excerpt}
-              onChange={(e) => setExcerpt(e.target.value)}
-            />
+            {/* Message */}
+            {message && (
+              <div className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium border
+                              ${message.type === "success"
+                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                                : "bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400"}`}>
+                {message.type === "success"
+                  ? <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                  : <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                }
+                {message.text}
+              </div>
+            )}
 
-            {/* Image */}
-            <div className="border-dashed border rounded-lg p-6 text-center">
-              {imagePreview ? (
-                <div className="relative">
-                  <img
-                    src={imagePreview}
-                    className="h-64 w-full object-cover rounded"
-                  />
-                  <button
-                    className="absolute top-2 right-2 bg-black/60 p-2 rounded"
-                    onClick={() => setImagePreview(null)}
-                  >
-                    <X className="text-white w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <label className="cursor-pointer">
-                  <Upload className="mx-auto mb-2" />
-                  Click to upload
-                  <input type="file" hidden onChange={handleImageChange} />
-                </label>
-              )}
+            {/* Title */}
+            <div className="glass-card rounded-2xl p-4 sm:p-5">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">
+                Blog Title <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Apne blog ka title likhein..."
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full bg-transparent text-xl sm:text-2xl font-bold
+                           text-foreground placeholder:text-muted-foreground/50
+                           outline-none border-none resize-none"
+              />
             </div>
 
             {/* Category */}
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2"
-            >
-              <option value="">Select Category *</option>
-              {DUMMY_CATEGORIES.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+            <div className="glass-card rounded-2xl p-4 sm:p-5">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">
+                Category <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <FolderOpen className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <select
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="w-full bg-muted/30 border border-border/50 rounded-xl
+                             pl-10 pr-4 py-2.5 text-sm text-foreground
+                             outline-none focus:border-primary focus:bg-background
+                             transition-colors appearance-none cursor-pointer"
+                >
+                  <option value="">Category select karo</option>
+                  {categories.map((cat) => (
+                    <option key={cat.ID} value={cat.ID}>{cat.catName}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
             {/* Content */}
-            <textarea
-              className="w-full h-96 border rounded-lg p-4"
-              placeholder="Start writing your blog..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
+            <div className="glass-card rounded-2xl p-4 sm:p-5">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">
+                Content <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                placeholder="Apna blog yahan likhein..."
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={16}
+                className="w-full bg-transparent text-sm sm:text-base leading-relaxed
+                           text-foreground placeholder:text-muted-foreground/50
+                           outline-none border-none resize-none"
+              />
+            </div>
+
+            {/* Bottom publish button */}
+            <button
+              onClick={handlePublish}
+              disabled={submitting}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl
+                         text-sm font-semibold bg-primary text-primary-foreground
+                         hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {submitting
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Publishing...</>
+                : <><PenLine className="w-4 h-4" /> Publish Blog</>
+              }
+            </button>
+
           </div>
-        </div>
+        </main>
       </div>
     </div>
   )

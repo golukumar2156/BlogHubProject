@@ -87,25 +87,25 @@ function App() {
       {!hideNavbar && <Navbar />}
 
       <Routes>
-        {/* 🌍 Public Routes */}
+        {/*  Public Routes */}
         <Route path="/" element={<GuestRoute><HomePage /></GuestRoute>} />
         <Route path="/blogs" element={<BlogsPage />} />
         <Route path="/blog/:id" element={<BlogDetailsPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
 
-        {/* 🔐 Auth Routes — logged in hai to redirect to dashboard */}
+        {/*  Auth Routes — logged in hai to redirect to dashboard */}
         <Route path="/login"      element={<GuestRoute><LoginPage /></GuestRoute>} />
         <Route path="/register"   element={<GuestRoute><RegisterPage /></GuestRoute>} />
         <Route path="/verify-otp" element={<VerifyOtp />} />
 
-        {/* 👤 User Routes — login required */}
+        {/* User Routes — login required */}
         <Route path="/dashboard"   element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/my-blogs"    element={<ProtectedRoute><MyBlogs /></ProtectedRoute>} />
         <Route path="/create-blog" element={<ProtectedRoute><CreateBlog /></ProtectedRoute>} />
         <Route path="/settings"    element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         <Route path="/my-profile"  element={<ProtectedRoute><MyProfile /></ProtectedRoute>} />
 
-        {/* 🛠️ Admin Routes */}
+        {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboardPage />} />
           <Route path="categories" element={<CategoryPage />} />

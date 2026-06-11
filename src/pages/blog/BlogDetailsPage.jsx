@@ -48,10 +48,8 @@ function HeroSection({ imageUrl, title, categoryName }) {
     )
   }
 
-  // No image — gorgeous gradient placeholder
   return (
     <div className="relative w-full h-56 md:h-72 overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-accent to-secondary/30 flex items-center justify-center">
-      {/* Decorative circles */}
       <div className="absolute top-6 left-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
       <div className="absolute bottom-6 right-10 w-40 h-40 bg-secondary/20 rounded-full blur-3xl" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-primary/10 rounded-full blur-xl" />
@@ -88,9 +86,9 @@ export default function BlogDetailsPage() {
       .then((res) => setPost(res.data))
       .catch((err) => {
         const status = err?.response?.status
-        if (status === 404)      setError("Yeh post nahi mili.")
-        else if (status === 401) setError("Server error 401 — GET /posts/{id} ko permitAll karo SecurityConfig mein.")
-        else                     setError("Post load nahi ho paya. Backend check karo.")
+        if (status === 404)      setError("This post was not found.")
+        else if (status === 401) setError("Unauthorized (401) — make sure GET /posts/{id} is public in SecurityConfig.")
+        else                     setError("Failed to load this post. Please check your backend.")
       })
       .finally(() => setLoading(false))
   }, [id])
@@ -101,7 +99,6 @@ export default function BlogDetailsPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // ── Loading ──
   if (loading) {
     return (
       <div className="bg-background text-foreground min-h-screen">
@@ -122,7 +119,6 @@ export default function BlogDetailsPage() {
     )
   }
 
-  // ── Error ──
   if (error || !post) {
     return (
       <div className="bg-background text-foreground min-h-screen">
@@ -131,20 +127,22 @@ export default function BlogDetailsPage() {
           <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto">
             <BookOpen className="w-8 h-8 text-destructive" />
           </div>
-          <p className="text-muted-foreground">{error || "Post nahi mili."}</p>
+          <p className="text-muted-foreground">{error || "Post not found."}</p>
           <Button variant="outline" onClick={() => navigate("/blogs")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Wapas Blogs pe
+            Back to Blogs
           </Button>
         </div>
       </div>
     )
   }
 
-  // ── Helpers ──
   const authorName    = post.authorName || post.author?.name || post.author || "Unknown Author"
   const categoryName  = post.categoryName || post.category?.catName || post.category || null
-  const imageUrl      = post.imageUrl || post.image || post.coverImage || null
+  const rawImageUrl   = post.imageUrl || post.image || post.coverImage || null
+  const imageUrl      = rawImageUrl && rawImageUrl.startsWith("/uploads")
+                        ? `${import.meta.env.VITE_API_BASE_URL || "http://localhost:7000"}${rawImageUrl}`
+                        : rawImageUrl
   const createdAt     = post.createdAt || post.publishedAt || null
   const formattedDate = createdAt
     ? new Date(createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
@@ -158,7 +156,6 @@ export default function BlogDetailsPage() {
       <main className="pt-20">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24">
 
-          {/* ── Back ── */}
           <button
             onClick={() => navigate("/blogs")}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 group"
@@ -167,10 +164,8 @@ export default function BlogDetailsPage() {
             Back to all blogs
           </button>
 
-          {/* ── Hero ── */}
           <HeroSection imageUrl={imageUrl} title={post.title} categoryName={categoryName} />
 
-          {/* ── Meta row ── */}
           <div className="flex flex-wrap items-center gap-3 mt-6 mb-4">
             {categoryName && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold border border-primary/20">
@@ -190,12 +185,10 @@ export default function BlogDetailsPage() {
             )}
           </div>
 
-          {/* ── Title ── */}
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight mb-6">
             {post.title}
           </h1>
 
-          {/* ── Author + Share bar ── */}
           <div className="flex items-center justify-between py-5 mb-8 border-y border-border/60">
             <div className="flex items-center gap-3">
               <Avatar name={authorName} size="md" />
@@ -214,7 +207,6 @@ export default function BlogDetailsPage() {
             </button>
           </div>
 
-          {/* ── Article body ── */}
           <article className="prose prose-neutral dark:prose-invert max-w-none
             prose-headings:font-bold prose-headings:tracking-tight
             prose-p:leading-relaxed prose-p:text-foreground/85
@@ -231,7 +223,6 @@ export default function BlogDetailsPage() {
             }
           </article>
 
-          {/* ── Author card at bottom ── */}
           <div className="rounded-2xl border border-border/60 bg-muted/30 p-6 flex items-start gap-5">
             <Avatar name={authorName} size="lg" />
             <div>

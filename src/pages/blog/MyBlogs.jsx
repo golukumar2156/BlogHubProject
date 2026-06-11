@@ -5,10 +5,10 @@ import axiosInstance from "@/service/axiosInstance"
 import {
   Trash2, Edit2, Search, CheckCircle, AlertCircle,
   X, PlusCircle, BookOpen, FileText, Clock,
-  Loader2, RefreshCw, FolderOpen,
+  Loader2, RefreshCw, FolderOpen, ImagePlus,
+  ChevronLeft, ChevronRight,
 } from "lucide-react"
 
-// ✅ Modal — MyBlogs ke BAHAR define kiya
 const Modal = ({ onClose, title, children }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
     <div className="bg-background border border-border/50 rounded-2xl shadow-2xl w-full max-w-lg">
@@ -23,9 +23,6 @@ const Modal = ({ onClose, title, children }) => (
   </div>
 )
 
-// ✅ BlogForm — MyBlogs ke BAHAR define kiya
-//    form aur setForm props ke zariye pass ho rahe hain
-//    isliye har keystroke pe re-mount NAHI hoga
 const BlogForm = ({ form, setForm, categories, onSubmit, submitLabel, submitting }) => (
   <div className="space-y-4">
     <div>
@@ -60,6 +57,55 @@ const BlogForm = ({ form, setForm, categories, onSubmit, submitLabel, submitting
 
     <div>
       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+        Cover Image <span className="text-muted-foreground/50 font-normal normal-case">(optional)</span>
+      </label>
+
+      {form.imagePreview ? (
+        <div className="relative rounded-xl overflow-hidden">
+          <img src={form.imagePreview} alt="Preview"
+            className="w-full h-36 object-cover rounded-xl" />
+          <button
+            type="button"
+            onClick={() => setForm((prev) => ({ ...prev, image: null, imagePreview: null }))}
+            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60
+                       hover:bg-black/80 flex items-center justify-center text-white transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/50 text-white text-xs">
+            {form.image?.name}
+          </span>
+        </div>
+      ) : (
+        <label className="border-2 border-dashed border-border/50 hover:border-primary/50
+                           rounded-xl h-28 flex flex-col items-center justify-center gap-1.5
+                           cursor-pointer transition-colors hover:bg-muted/20 group">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center
+                          group-hover:bg-primary/20 transition-colors">
+            <ImagePlus className="w-5 h-5 text-primary" />
+          </div>
+          <p className="text-xs font-medium">Click to upload image</p>
+          <p className="text-xs text-muted-foreground">JPG, PNG, WEBP - max 5MB</p>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files[0]
+              if (!file) return
+              if (file.size > 5 * 1024 * 1024) return
+              const reader = new FileReader()
+              reader.onload = (ev) =>
+                setForm((prev) => ({ ...prev, image: file, imagePreview: ev.target.result }))
+              reader.readAsDataURL(file)
+            }}
+          />
+        </label>
+      )}
+    </div>
+
+    <div>
+      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
         Content
       </label>
       <textarea
@@ -85,7 +131,6 @@ const BlogForm = ({ form, setForm, categories, onSubmit, submitLabel, submitting
   </div>
 )
 
-// ─────────────────────────────────────────────
 export default function MyBlogs() {
   const { user } = useSelector((s) => s.auth)
 
@@ -101,10 +146,11 @@ export default function MyBlogs() {
   const [showEdit,   setShowEdit]   = useState(false)
   const [showDelete, setShowDelete] = useState(null)
 
-  const [form,   setForm]   = useState({ title: "", content: "", categoryId: "" })
+  const [form,   setForm]   = useState({ title: "", content: "", categoryId: "", image: null, imagePreview: null })
   const [editId, setEditId] = useState(null)
+  const [page,   setPage]   = useState(0)
+  const PAGE_SIZE = 6
 
-  // ── Fetch ──
   const fetchData = async () => {
     setLoading(true)
     setError(null)
@@ -120,7 +166,7 @@ export default function MyBlogs() {
       )
       setBlogs(mine)
       setCategories(cats)
-    } catch (err) {
+    } catch {
       setError("Data load nahi hua. Backend check karo.")
     } finally {
       setLoading(false)
@@ -134,22 +180,28 @@ export default function MyBlogs() {
     setTimeout(() => setMessage(null), 3000)
   }
 
-  // ── Create ──
   const handleCreate = async () => {
     if (!form.title.trim() || !form.content.trim() || !form.categoryId) {
       showMsg("error", "Saare fields bharo."); return
     }
     setSubmitting(true)
     try {
-      await axiosInstance.post("/posts", {
-        title:      form.title,
-        content:    form.content,
-        categoryID: Number(form.categoryId),   // ✅ capital ID
-        authorID:   Number(user?.id),           // ✅ required by backend
-      })
-      showMsg("success", "Blog successfully create hua! ✅")
+      const formData = new FormData()
+      formData.append(
+        "post",
+        new Blob([JSON.stringify({
+          title:      form.title,
+          content:    form.content,
+          categoryID: Number(form.categoryId),
+          authorID:   Number(user?.id),
+        })], { type: "application/json" })
+      )
+      if (form.image) formData.append("image", form.image)
+
+      await axiosInstance.post("/posts", formData)
+      showMsg("success", "Blog successfully create hua! ")
       setShowCreate(false)
-      setForm({ title: "", content: "", categoryId: "" })
+      setForm({ title: "", content: "", categoryId: "", image: null, imagePreview: null })
       fetchData()
     } catch (err) {
       showMsg("error", err?.response?.data?.message || err?.response?.data?.error || "Blog create nahi hua: " + (err?.response?.status || "Network error"))
@@ -158,13 +210,14 @@ export default function MyBlogs() {
     }
   }
 
-  // ── Edit ──
   const openEdit = (blog) => {
     setEditId(blog.ID || blog.id)
     setForm({
-      title:      blog.title      || "",
-      content:    blog.content    || "",
-      categoryId: blog.categoryId || "",
+      title:        blog.title      || "",
+      content:      blog.content    || "",
+      categoryId:   blog.categoryID || blog.categoryId || "",
+      image:        null,
+      imagePreview: null,
     })
     setShowEdit(true)
   }
@@ -178,29 +231,28 @@ export default function MyBlogs() {
       await axiosInstance.put(`/posts/${editId}`, {
         title:      form.title,
         content:    form.content,
-        categoryID: Number(form.categoryId),   // ✅ capital ID
-        authorID:   Number(user?.id),           // ✅ required by backend
+        categoryID: Number(form.categoryId),
+        authorID:   Number(user?.id),
       })
-      showMsg("success", "Blog update ho gaya! ✅")
+      showMsg("success", "Blog update ho gaya! ")
       setShowEdit(false)
-      setForm({ title: "", content: "", categoryId: "" })
+      setForm({ title: "", content: "", categoryId: "", image: null, imagePreview: null })
       fetchData()
-    } catch (err) {
+    } catch {
       showMsg("error", "Blog update nahi hua. Dobara try karo.")
     } finally {
       setSubmitting(false)
     }
   }
 
-  // ── Delete ──
   const handleDelete = async (id) => {
     setSubmitting(true)
     try {
       await axiosInstance.delete(`/posts/${id}`)
-      showMsg("success", "Blog delete ho gaya! 🗑️")
+      showMsg("success", "Blog delete ho gaya! ")
       setShowDelete(null)
       fetchData()
-    } catch (err) {
+    } catch {
       showMsg("error", "Blog delete nahi hua.")
     } finally {
       setSubmitting(false)
@@ -210,9 +262,11 @@ export default function MyBlogs() {
   const filtered = blogs.filter((b) =>
     b.title?.toLowerCase().includes(search.toLowerCase())
   )
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const paginated  = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   const fmtDate = (d) =>
-    d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"
+    d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "-"
 
   const Skel = () => (
     <div className="animate-pulse bg-muted/50 rounded-2xl h-40 w-full" />
@@ -250,7 +304,10 @@ export default function MyBlogs() {
               }
             </button>
             <button
-              onClick={() => { setForm({ title: "", content: "", categoryId: "" }); setShowCreate(true) }}
+              onClick={() => {
+                setForm({ title: "", content: "", categoryId: "", image: null, imagePreview: null })
+                setShowCreate(true)
+              }}
               className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-primary text-primary-foreground
                          rounded-xl text-xs sm:text-sm font-semibold hover:opacity-90 transition-opacity"
             >
@@ -265,10 +322,11 @@ export default function MyBlogs() {
 
             {/* Toast */}
             {message && (
-              <div className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium
-                              border ${message.type === "success"
-                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600"
-                                : "bg-red-500/10 border-red-500/30 text-red-500"}`}>
+              <div className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium border ${
+                message.type === "success"
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600"
+                  : "bg-red-500/10 border-red-500/30 text-red-500"
+              }`}>
                 {message.type === "success"
                   ? <CheckCircle className="w-4 h-4 flex-shrink-0" />
                   : <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -294,7 +352,7 @@ export default function MyBlogs() {
                            outline-none focus:border-primary focus:bg-background transition-colors"
                 placeholder="Blog search karo..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setPage(0) }}
               />
               {search && (
                 <button
@@ -309,7 +367,7 @@ export default function MyBlogs() {
             {/* Content */}
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {[1,2,3].map(i => <Skel key={i} />)}
+                {[1, 2, 3].map((i) => <Skel key={i} />)}
               </div>
 
             ) : filtered.length === 0 ? (
@@ -327,7 +385,10 @@ export default function MyBlogs() {
                 </div>
                 {!search && (
                   <button
-                    onClick={() => { setForm({ title: "", content: "", categoryId: "" }); setShowCreate(true) }}
+                    onClick={() => {
+                      setForm({ title: "", content: "", categoryId: "", image: null, imagePreview: null })
+                      setShowCreate(true)
+                    }}
                     className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground
                                rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
                   >
@@ -337,59 +398,133 @@ export default function MyBlogs() {
               </div>
 
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filtered.map((blog) => (
-                  <div key={blog.ID || blog.id}
-                       className="glass-card rounded-2xl p-5 flex flex-col gap-3
-                                  hover:shadow-lg smooth-transition group">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
-                                       text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                        <FolderOpen className="w-3 h-3" />
-                        {blog.categoryName || "Uncategorized"}
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {paginated.map((blog) => (
+                    <div
+                      key={blog.ID || blog.id}
+                      className="glass-card rounded-2xl overflow-hidden flex flex-col hover:shadow-lg smooth-transition group"
+                    >
+                      {/* Cover Image */}
+                      <div className="relative h-40 bg-muted flex-shrink-0">
+                        {blog.imageUrl ? (
+                          <img
+                            src={
+                              blog.imageUrl.startsWith("/uploads")
+                                ? `${import.meta.env.VITE_API_BASE_URL || "http://localhost:7000"}${blog.imageUrl}`
+                                : blog.imageUrl
+                            }
+                            alt={blog.title}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-muted">
+                            <FileText className="w-10 h-10 text-muted-foreground/30" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-5 flex flex-col gap-3 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
+                                           text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                            <FolderOpen className="w-3 h-3" />
+                            {blog.categoryName || "Uncategorized"}
+                          </span>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock className="w-3 h-3" />
+                            <span>{fmtDate(blog.createdAt)}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex-1">
+                          <h3 className="font-bold text-base leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                            {blog.title}
+                          </h3>
+                          {blog.content && (
+                            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
+                              {blog.content}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>By {blog.authorName || user?.fullName}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => openEdit(blog)}
+                              className="p-2 rounded-lg hover:bg-primary/10 hover:text-primary
+                                         text-muted-foreground transition-colors"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setShowDelete(blog.ID || blog.id)}
+                              className="p-2 rounded-lg hover:bg-red-500/10 hover:text-red-500
+                                         text-muted-foreground transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex flex-col items-center gap-3 pt-4">
+                    <div className="border-t border-border/40 w-full" />
+                    <nav className="flex items-center gap-1">
+                      <button
+                        onClick={() => { setPage((prev) => prev - 1); window.scrollTo({ top: 0, behavior: "smooth" }) }}
+                        disabled={page === 0}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-border/50
+                                   text-muted-foreground hover:bg-muted/50 hover:text-foreground
+                                   disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+
+                      {Array.from({ length: totalPages }, (_, i) => i).map((p) => (
+                        <button
+                          key={p}
+                          onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }) }}
+                          className={`w-9 h-9 flex items-center justify-center rounded-lg border text-sm font-semibold transition-all ${
+                            page === p
+                              ? "bg-primary text-primary-foreground border-primary shadow-sm scale-105"
+                              : "border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                          }`}
+                        >
+                          {p + 1}
+                        </button>
+                      ))}
+
+                      <button
+                        onClick={() => { setPage((prev) => prev + 1); window.scrollTo({ top: 0, behavior: "smooth" }) }}
+                        disabled={page === totalPages - 1}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-border/50
+                                   text-muted-foreground hover:bg-muted/50 hover:text-foreground
+                                   disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </nav>
+                    <p className="text-xs text-muted-foreground">
+                      Showing{" "}
+                      <span className="font-semibold text-foreground">
+                        {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)}
                       </span>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        <span>{fmtDate(blog.createdAt)}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex-1">
-                      <h3 className="font-bold text-base leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                        {blog.title}
-                      </h3>
-                      {blog.content && (
-                        <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
-                          {blog.content}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-border/30">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <FileText className="w-3.5 h-3.5" />
-                        <span>By {blog.authorName || user?.fullName}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => openEdit(blog)}
-                          className="p-2 rounded-lg hover:bg-primary/10 hover:text-primary
-                                     text-muted-foreground transition-colors"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setShowDelete(blog.ID || blog.id)}
-                          className="p-2 rounded-lg hover:bg-red-500/10 hover:text-red-500
-                                     text-muted-foreground transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                      {" "}of{" "}
+                      <span className="font-semibold text-foreground">{filtered.length}</span> blogs
+                    </p>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
 
           </div>
@@ -398,7 +533,7 @@ export default function MyBlogs() {
 
       {/* CREATE MODAL */}
       {showCreate && (
-        <Modal title="Naya Blog Likho ✍️" onClose={() => setShowCreate(false)}>
+        <Modal title="Naya Blog Likho " onClose={() => setShowCreate(false)}>
           <BlogForm
             form={form}
             setForm={setForm}
@@ -412,7 +547,7 @@ export default function MyBlogs() {
 
       {/* EDIT MODAL */}
       {showEdit && (
-        <Modal title="Blog Edit Karo ✏️" onClose={() => setShowEdit(false)}>
+        <Modal title="Blog Edit Karo " onClose={() => setShowEdit(false)}>
           <BlogForm
             form={form}
             setForm={setForm}

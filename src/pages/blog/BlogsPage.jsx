@@ -323,10 +323,12 @@ export default function BlogsPage() {
     } catch (err) {
       const status = err?.response?.status
       if (status === 401) {
-         setError("Unauthorized (401) — make sure GET /posts and /categories are public in SecurityConfig.")      } else if (status) {
-        setError(`Server error ${status} — please check your backend`)
+        setError("unauthorized")
+      } else if (status) {
+        setError(`server_${status}`)
       } else {
-        setError(`Server error ${status} — please check your backend.`)      }
+        setError("offline")
+      }
       setPosts([])
     } finally {
       setLoading(false)
@@ -488,18 +490,71 @@ export default function BlogsPage() {
         {/* ── Content ── */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
 
-          {/* Error */}
+          {/* Error Banner + Dummy Cards */}
           {error && !loading && (
-            <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/30
-                            text-red-500 rounded-2xl px-5 py-4 mb-6 text-sm">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold mb-1">{error}</p>
-                <button onClick={fetchPosts} className="flex items-center gap-1 text-xs underline underline-offset-2">
-                  <RefreshCw className="w-3 h-3" /> Retry
-                </button>
+            <>
+              {/* Friendly error banner */}
+              <div className="flex items-start gap-4 bg-gradient-to-r from-amber-500/10 to-orange-500/5
+                              border border-amber-500/25 rounded-2xl px-5 py-4 mb-6">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-5 h-5 text-amber-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-amber-600 dark:text-amber-400 mb-0.5">
+                    {error === "offline"
+                      ? "🔌 Backend is offline"
+                      : error === "unauthorized"
+                      ? "🔒 Access not authorized"
+                      : `⚠️ Server returned an error`}
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {error === "offline"
+                      ? "Looks like the backend server isn't running. Start your Spring Boot server and refresh."
+                      : error === "unauthorized"
+                      ? "Make sure GET /posts and /categories are public in your SecurityConfig."
+                      : "Something went wrong on the server. Please check your backend logs."}
+                  </p>
+                  <button onClick={fetchPosts} className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline">
+                    <RefreshCw className="w-3 h-3" /> Retry
+                  </button>
+                </div>
               </div>
-            </div>
+
+              {/* 2 dummy preview cards */}
+              <p className="text-xs text-muted-foreground/50 mb-3 ml-1 italic">Here's a preview of what blogs will look like:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10 opacity-40 pointer-events-none select-none">
+                {[
+                  { title: "Getting Started with React & Spring Boot", cat: "Technology", mins: 5, excerpt: "A complete guide to building full-stack apps using React on the frontend and Spring Boot on the backend. We cover project setup, API design, and deployment." },
+                  { title: "Writing Blogs That People Actually Read", cat: "Writing Tips", mins: 3, excerpt: "Discover the secrets behind engaging blog posts — from crafting irresistible headlines to structuring content that keeps readers hooked till the very end." },
+                ].map((dummy, i) => (
+                  <div key={i} className="group glass-card rounded-2xl overflow-hidden border border-border/50 flex flex-col">
+                    <div className={`relative h-44 flex items-center justify-center flex-shrink-0 ${i === 0 ? "bg-gradient-to-br from-violet-500 to-indigo-500" : "bg-gradient-to-br from-cyan-500 to-blue-500"}`}>
+                      <div className="flex flex-col items-center gap-2 opacity-50">
+                        <BookOpen className="w-10 h-10 text-white" />
+                      </div>
+                      <div className="absolute top-3 left-3">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-black/40 text-white backdrop-blur-sm border border-white/10">
+                          {dummy.cat}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-5 flex flex-col flex-1">
+                      <h3 className="font-bold text-base leading-snug mb-2 line-clamp-2">{dummy.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-3 mb-4 flex-1 leading-relaxed">{dummy.excerpt}</p>
+                      <div className="flex items-center justify-between pt-3 border-t border-border/30 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <User className="w-3 h-3" />
+                          <span>Sample Author</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{dummy.mins} min</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
 
           {/* Grid */}
@@ -507,16 +562,16 @@ export default function BlogsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
               {Array(PAGE_SIZE).fill(0).map((_, i) => <SkeletonCard key={i} />)}
             </div>
-          ) : posts.length > 0 ? (
+          ) : !error && posts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
               {posts.map(post => <BlogCard key={post.ID} post={post} />)}
             </div>
           ) : !error ? (
             <div className="glass-card rounded-2xl p-14 text-center border border-border/40">
               <BookOpen className="w-12 h-12 mx-auto mb-4 text-muted-foreground/30" />
-              <p className="font-semibold text-lg mb-1">Koi blog nahi mila</p>
+              <p className="font-semibold text-lg mb-1">No blogs found</p>
               <p className="text-sm text-muted-foreground mb-5">
-                {hasFilters ? "Filter change karo ya clear karo." : "No blogs have been published yet."}
+                {hasFilters ? "Try changing or clearing the filters." : "No blogs have been published yet."}
               </p>
               {hasFilters && (
                 <button onClick={clearFilters}

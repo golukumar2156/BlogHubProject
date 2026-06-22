@@ -73,10 +73,9 @@ export const deleteCategory = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       await deleteCategoryApi(id)
-      return id                // store mein filter ke liye ID wapas karo
+      return id                // return ID for filtering in store
     } catch (err) {
       return rejectWithValue(err.response?.data || { message: "Failed to delete category" })
     }
   }
 )
- 

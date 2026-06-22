@@ -42,19 +42,19 @@ export default function SettingsPage() {
   // ── Profile Save ──
   const handleProfileSave = async () => {
     if (!profile.fullName.trim()) {
-      showTempMsg(setProfileMsg, "error", "Naam required hai.")
+      showTempMsg(setProfileMsg, "error", "Name is required.")
       return
     }
     if (!profile.email.trim()) {
-      showTempMsg(setProfileMsg, "error", "Email required hai.")
+      showTempMsg(setProfileMsg, "error", "Email is required.")
       return
     }
     if (!profile.about.trim()) {
-      showTempMsg(setProfileMsg, "error", "About field required hai (min 1 character).")
+      showTempMsg(setProfileMsg, "error", "About field is required (min 1 character).")
       return
     }
     if (!user?.id) {
-      showTempMsg(setProfileMsg, "error", "User ID nahi mili. Logout karke dobara login karo.")
+      showTempMsg(setProfileMsg, "error", "User ID not found. Please logout and login again.")
       return
     }
 
@@ -72,20 +72,20 @@ export default function SettingsPage() {
       localStorage.setItem("user", JSON.stringify(updatedUser))
       dispatch(updateUser(res.data))
 
-      showTempMsg(setProfileMsg, "success", "Profile update ho gayi! ✅")
+      showTempMsg(setProfileMsg, "success", "Profile updated successfully! ✅")
     } catch (err) {
       const msg = err?.response?.data?.message
         || err?.response?.data
-        || "Profile update nahi hua. Dobara try karo."
+        || "Profile update failed. Please try again."
       showTempMsg(setProfileMsg, "error", typeof msg === "string" ? msg : "Profile update failed.")
     } finally {
       setProfileLoading(false)
     }
   }
 
-  // ── Password — backend mein endpoint nahi hai ──
+  // ── Password — endpoint not available in backend ──
   const handlePasswordSave = async () => {
-    showTempMsg(setPwdMsg, "error", "Password change backend mein abhi implement nahi hua hai. Backend mein /authors/change-password endpoint banana hoga.")
+    showTempMsg(setPwdMsg, "error", "Password change is not yet implemented in the backend. You need to add the /authors/change-password endpoint in the backend.")
   }
 
   const handleLogout = () => {
@@ -218,7 +218,7 @@ export default function SettingsPage() {
                         onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
                         className="w-full bg-muted/30 border border-border/50 rounded-xl pl-10 pr-4 py-2.5 text-sm
                                    outline-none focus:border-primary focus:bg-background transition-colors"
-                        placeholder="Apna naam likhein"
+                        placeholder="Enter your name"
                       />
                     </div>
                   </div>
@@ -254,7 +254,7 @@ export default function SettingsPage() {
                         rows={3}
                         className="w-full bg-muted/30 border border-border/50 rounded-xl pl-10 pr-4 py-2.5 text-sm
                                    outline-none focus:border-primary focus:bg-background transition-colors resize-none"
-                        placeholder="Apne baare mein kuch likhein..."
+                        placeholder="Write something about yourself..."
                       />
                     </div>
                   </div>
@@ -308,10 +308,10 @@ export default function SettingsPage() {
                   <div>
                     <p className="font-semibold">Backend endpoint missing</p>
                     <p className="text-xs mt-0.5 text-amber-500/80">
-                      Password change ke liye backend mein{" "}
+                      To change password, the backend needs a{" "}
                       <code className="font-mono bg-amber-500/10 px-1 rounded">PUT /api/authors/change-password</code>{" "}
-                      endpoint banana hoga jo <code className="font-mono bg-amber-500/10 px-1 rounded">currentPassword</code> aur{" "}
-                      <code className="font-mono bg-amber-500/10 px-1 rounded">newPassword</code> accept kare.
+                      endpoint that accepts <code className="font-mono bg-amber-500/10 px-1 rounded">currentPassword</code> and{" "}
+                      <code className="font-mono bg-amber-500/10 px-1 rounded">newPassword</code>.
                     </p>
                   </div>
                 </div>
@@ -329,13 +329,13 @@ export default function SettingsPage() {
                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                       New Password
                     </label>
-                    <PwdInput field="newPass" placeholder="Naya password (min 6 chars)" />
+                    <PwdInput field="newPass" placeholder="New password (min 6 chars)" />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                       Confirm New Password
                     </label>
-                    <PwdInput field="confirm" placeholder="Password confirm karo" />
+                    <PwdInput field="confirm" placeholder="Confirm password" />
                   </div>
                 </div>
 

@@ -44,7 +44,7 @@ export default function Dashboard() {
     setLoading(true)
     setError(null)
     const tok = token || localStorage.getItem("token")
-    if (!tok) { setError("Token nahi mila. Please logout karke dobara login karo."); setLoading(false); return }
+    if (!tok) { setError("Authentication token not found. Please logout and login again."); setLoading(false); return }
 
     try {
       const [allRes, catRes] = await Promise.all([
@@ -107,8 +107,8 @@ export default function Dashboard() {
   )
 
   const getErrorMsg = () => {
-    if (error === "no_server")    return "Backend server nahi chala (localhost:7000). Server start karo phir Refresh karo."
-    if (error === "unauthorized") return "Session expire ho gayi. Logout karke dobara login karo."
+    if (error === "no_server")    return "Backend server is not running (localhost:7000). Please start the server and refresh the page."
+    if (error === "unauthorized") return "Session has expired. Please logout and login again."
     return `Server error. (${error})`
   }
 
@@ -178,7 +178,7 @@ export default function Dashboard() {
                   : <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />}
                 <div>
                   <p className="font-medium mb-1">{getErrorMsg()}</p>
-                  <button onClick={fetchData} className="text-xs underline underline-offset-2">Dobara try karo →</button>
+                  <button onClick={fetchData} className="text-xs underline underline-offset-2">Try Again →</button>
                 </div>
               </div>
             )}

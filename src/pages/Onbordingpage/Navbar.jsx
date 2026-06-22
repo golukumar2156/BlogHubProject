@@ -1,22 +1,97 @@
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate, useLocation } from "react-router-dom"
 import { useSelector, useDispatch } from "react-redux"
 import { resetAuth } from "@/Features/auth/authSlice"
 import { ThemeToggle } from "@/components/ThemeToggle"
-import { Search, Menu, X, LogOut, LayoutDashboard, BookOpen, ShieldCheck } from "lucide-react"
+import { Search, Menu, X, LogOut, LayoutDashboard, BookOpen, ShieldCheck, Globe, ChevronDown, Check } from "lucide-react"
+import { useLang } from "@/i18n/LanguageContext"
+import { translations } from "@/i18n/translations"
 
+// ── Language Selector Dropdown ──
+function LangSelector() {
+  const { lang, changeLang } = useLang()
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  // Close on outside click
+  useEffect(() => {
+    function handle(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener("mousedown", handle)
+    return () => document.removeEventListener("mousedown", handle)
+  }, [])
+
+  const current = translations[lang] || translations.en
+
+  return (
+    <div ref={ref} className="relative">
+      {/* Trigger button — same style as Login */}
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold
+                   border border-border/50 text-muted-foreground
+                   hover:text-foreground hover:bg-muted/40 transition-colors"
+      >
+        <Globe className="w-3.5 h-3.5" />
+        <span>{current.flag}</span>
+        <span className="hidden sm:inline">{current.name}</span>
+        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-52 rounded-2xl border border-border/60
+                        bg-background/95 backdrop-blur-xl shadow-2xl z-[100] overflow-hidden
+                        animate-in fade-in slide-in-from-top-2 duration-150">
+
+          {/* Header */}
+          <div className="px-3 py-2.5 border-b border-border/40">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Select Language
+            </p>
+          </div>
+
+          {/* Language list */}
+          <div className="py-1.5 max-h-72 overflow-y-auto">
+            {Object.entries(translations).map(([code, val]) => {
+              const isActive = lang === code
+              return (
+                <button
+                  key={code}
+                  onClick={() => { changeLang(code); setOpen(false) }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors
+                    ${isActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-foreground hover:bg-muted/50"
+                    }`}
+                >
+                  <span className="text-base w-6 text-center">{val.flag}</span>
+                  <span className="flex-1 text-left font-medium">{val.name}</span>
+                  {isActive && <Check className="w-3.5 h-3.5 text-primary" />}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Main Navbar ──
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchVal,  setSearchVal]  = useState("")
+  const [langMobile, setLangMobile] = useState(false)
 
   const { user, token } = useSelector((s) => s.auth)
   const dispatch  = useDispatch()
   const navigate  = useNavigate()
   const location  = useLocation()
+  const { lang, changeLang, t } = useLang()
 
-  const isLoggedIn  = !!(token || localStorage.getItem("token"))
-  const activeUser  = user || (localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null)
-  const isAdmin     = activeUser?.role === "ADMIN"
+  const isLoggedIn = !!(token || localStorage.getItem("token"))
+  const activeUser = user || (localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null)
+  const isAdmin    = activeUser?.role === "ADMIN"
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/")
 
@@ -35,8 +110,8 @@ export function Navbar() {
   }
 
   const navLinks = [
-    { to: "/blogs",      label: "Discover" },
-    { to: "/categories", label: "Categories" },
+    { to: "/blogs",      label: t.nav.discover },
+    { to: "/categories", label: t.nav.categories },
   ]
 
   const NavLink = ({ to, label, mobile = false }) => (
@@ -84,13 +159,16 @@ export function Navbar() {
               <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <input
                 type="text"
-                placeholder="Search blogs…"
+                placeholder={t.nav.search}
                 value={searchVal}
                 onChange={e => setSearchVal(e.target.value)}
                 onKeyDown={handleSearch}
                 className="bg-transparent outline-none text-sm w-full placeholder:text-muted-foreground"
               />
             </div>
+
+            {/* 🌐 Language Selector */}
+            <LangSelector />
 
             <ThemeToggle />
 
@@ -106,15 +184,15 @@ export function Navbar() {
                                 : "border-border/50 text-muted-foreground hover:bg-muted/40 hover:text-foreground"}`}
                 >
                   {isAdmin
-                    ? <><ShieldCheck className="w-3.5 h-3.5" /> Admin</>
-                    : <><LayoutDashboard className="w-3.5 h-3.5" /> Dashboard</>
+                    ? <><ShieldCheck className="w-3.5 h-3.5" /> {t.nav.admin}</>
+                    : <><LayoutDashboard className="w-3.5 h-3.5" /> {t.nav.dashboard}</>
                   }
                 </Link>
                 <button onClick={handleLogout}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold
                              border border-border/50 text-muted-foreground hover:text-red-500
                              hover:bg-red-500/10 hover:border-red-500/20 transition-colors">
-                  <LogOut className="w-3.5 h-3.5" /> Logout
+                  <LogOut className="w-3.5 h-3.5" /> {t.nav.logout}
                 </button>
               </div>
             ) : (
@@ -122,13 +200,13 @@ export function Navbar() {
                 <Link to="/login"
                   className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border border-border/50
                              text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">
-                  Login
+                  {t.nav.login}
                 </Link>
                 <Link to="/register"
                   className="px-3.5 py-1.5 rounded-xl text-xs font-semibold
                              bg-gradient-to-r from-violet-600 to-indigo-600 text-white
                              hover:opacity-90 transition-opacity shadow-sm shadow-violet-500/20">
-                  Sign Up
+                  {t.nav.signup}
                 </Link>
               </div>
             )}
@@ -153,7 +231,7 @@ export function Navbar() {
               <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <input
                 type="text"
-                placeholder="Search blogs…"
+                placeholder={t.nav.search}
                 value={searchVal}
                 onChange={e => setSearchVal(e.target.value)}
                 onKeyDown={handleSearch}
@@ -163,6 +241,35 @@ export function Navbar() {
 
             {navLinks.map(l => <NavLink key={l.to} {...l} mobile />)}
 
+            {/* Mobile Language Selector */}
+            <div className="px-1 py-1">
+              <button
+                onClick={() => setLangMobile(v => !v)}
+                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm hover:bg-muted/40 transition-colors"
+              >
+                <Globe className="w-4 h-4 text-primary" />
+                <span className="flex-1 text-left">Language — {translations[lang]?.flag} {translations[lang]?.name}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${langMobile ? "rotate-180" : ""}`} />
+              </button>
+
+              {langMobile && (
+                <div className="mt-1 ml-3 space-y-0.5 border-l-2 border-primary/20 pl-3">
+                  {Object.entries(translations).map(([code, val]) => (
+                    <button
+                      key={code}
+                      onClick={() => { changeLang(code); setLangMobile(false); setMobileOpen(false) }}
+                      className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-colors
+                        ${lang === code ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/40"}`}
+                    >
+                      <span>{val.flag}</span>
+                      <span>{val.name}</span>
+                      {lang === code && <Check className="w-3.5 h-3.5 ml-auto" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {isLoggedIn ? (
               <>
                 <Link
@@ -171,24 +278,24 @@ export function Navbar() {
                   className="flex items-center gap-2 px-3 py-2.5 text-sm rounded-xl hover:bg-muted/40 transition-colors"
                 >
                   {isAdmin ? <ShieldCheck className="w-4 h-4 text-primary" /> : <LayoutDashboard className="w-4 h-4 text-primary" />}
-                  {isAdmin ? "Admin Panel" : "My Dashboard"}
+                  {isAdmin ? t.nav.admin : t.nav.dashboard}
                 </Link>
                 <button onClick={handleLogout}
                   className="w-full flex items-center gap-2 px-3 py-2.5 text-sm rounded-xl
                              text-red-500 hover:bg-red-500/10 transition-colors">
-                  <LogOut className="w-4 h-4" /> Logout
+                  <LogOut className="w-4 h-4" /> {t.nav.logout}
                 </button>
               </>
             ) : (
               <>
                 <Link to="/login" onClick={() => setMobileOpen(false)}
                   className="block px-3 py-2.5 text-sm rounded-xl hover:bg-muted/40 transition-colors">
-                  Login
+                  {t.nav.login}
                 </Link>
                 <Link to="/register" onClick={() => setMobileOpen(false)}
                   className="block px-3 py-2.5 text-sm rounded-xl font-semibold
                              text-primary hover:bg-primary/10 transition-colors">
-                  Sign Up →
+                  {t.nav.signup} →
                 </Link>
               </>
             )}

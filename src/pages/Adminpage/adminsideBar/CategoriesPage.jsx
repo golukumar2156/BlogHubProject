@@ -202,8 +202,8 @@ export default function CategoriesPage() {
                 <FolderOpen className="w-8 h-8 text-destructive/70" />
               </div>
               <div>
-                <p className="font-semibold mb-1">Categories load nahi ho payi</p>
-                <p className="text-sm text-muted-foreground">Backend check karo.</p>
+                <p className="font-semibold mb-1">Failed to load categories</p>
+                <p className="text-sm text-muted-foreground">Please check your backend.</p>
               </div>
               <button
                 onClick={() => dispatch(fetchAllCategories())}
@@ -221,7 +221,7 @@ export default function CategoriesPage() {
               <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto">
                 <FolderOpen className="w-8 h-8 text-muted-foreground/50" />
               </div>
-              <p className="font-semibold">Koi category nahi hai abhi</p>
+              <p className="font-semibold">No categories yet</p>
               <p className="text-sm text-muted-foreground">Admin categories add karega tab yahan dikhenge.</p>
             </div>
           )}
@@ -229,7 +229,7 @@ export default function CategoriesPage() {
           {/* No search result */}
           {!loading && !error && categories.length > 0 && filtered.length === 0 && (
             <div className="text-center py-20 space-y-3">
-              <p className="font-semibold">"{query}" se koi category nahi mili</p>
+              <p className="font-semibold">No categories found for "{query}"</p>
               <button onClick={() => setQuery("")} className="text-sm text-primary underline underline-offset-2">
                 Clear search
               </button>

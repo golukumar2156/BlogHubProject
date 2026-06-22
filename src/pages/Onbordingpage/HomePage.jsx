@@ -11,6 +11,7 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis,
   Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell,
 } from "recharts";
+import SmartBlogFinder from "./SmartBlogFinder";
 
 // ── Data ──────────────────────────────────────────────────────
 const slides = [
@@ -627,6 +628,9 @@ const HomePage = () => {
         </footer>
 
       </main>
+
+      {/* 🔍 Smart Blog Finder */}
+      <SmartBlogFinder />
     </div>
   );
 };

@@ -60,7 +60,7 @@ const AdminDashboardPage = () => {
       )
       setRecentUsers(sortedUsers.slice(0, 5))
     } catch (err) {
-      setError("Data load karne mein problem aayi. Backend check karo.")
+      setError("Failed to load data. Please check the backend.")
     } finally {
       setLoading(false)
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSelector } from "react-redux"
 import Sidebar from "./Sidebar"
 import axiosInstance from "@/service/axiosInstance"
@@ -6,13 +6,13 @@ import {
   Trash2, Edit2, Search, CheckCircle, AlertCircle,
   X, PlusCircle, BookOpen, FileText, Clock,
   Loader2, RefreshCw, FolderOpen, ImagePlus,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Sparkles,
 } from "lucide-react"
 
 const Modal = ({ onClose, title, children }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-    <div className="bg-background border border-border/50 rounded-2xl shadow-2xl w-full max-w-lg">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
+    <div className="bg-background border border-border/50 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border/40 sticky top-0 bg-background z-10">
         <h2 className="text-base font-bold">{title}</h2>
         <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors">
           <X className="w-4 h-4" />
@@ -23,113 +23,316 @@ const Modal = ({ onClose, title, children }) => (
   </div>
 )
 
-const BlogForm = ({ form, setForm, categories, onSubmit, submitLabel, submitting }) => (
-  <div className="space-y-4">
-    <div>
-      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
-        Title
-      </label>
-      <input
-        className="w-full bg-muted/30 border border-border/50 rounded-xl px-4 py-2.5 text-sm
-                   outline-none focus:border-primary focus:bg-background transition-colors"
-        placeholder="Blog ka title likhein..."
-        value={form.title}
-        onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-      />
-    </div>
+function BlogForm({ form, setForm, categories, onSubmit, submitLabel, submitting }) {
+  // ── Title AI states ──
+  const [titleSuggestions,     setTitleSuggestions]     = useState([])
+  const [titleSuggestLoading,  setTitleSuggestLoading]  = useState(false)
+  const titleDebounceRef = useRef(null)
 
-    <div>
-      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
-        Category
-      </label>
-      <select
-        className="w-full bg-muted/30 border border-border/50 rounded-xl px-4 py-2.5 text-sm
-                   outline-none focus:border-primary focus:bg-background transition-colors"
-        value={form.categoryId}
-        onChange={(e) => setForm((prev) => ({ ...prev, categoryId: e.target.value }))}
-      >
-        <option value="">Category select karo</option>
-        {categories.map((cat) => (
-          <option key={cat.ID} value={cat.ID}>{cat.catName}</option>
-        ))}
-      </select>
-    </div>
+  // ── Content AI states ──
+  const [contentSuggestion,    setContentSuggestion]    = useState("")
+  const [contentSuggestLoading,setContentSuggestLoading]= useState(false)
+  const contentDebounceRef = useRef(null)
+  const textareaRef = useRef(null)
 
-    <div>
-      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
-        Cover Image <span className="text-muted-foreground/50 font-normal normal-case">(optional)</span>
-      </label>
+  // ─────────────────────────────────────────────────
+  // TITLE: type karte waqt real-time suggest
+  // ─────────────────────────────────────────────────
+  const handleTitleChange = (e) => {
+    const value = e.target.value
+    setForm((prev) => ({ ...prev, title: value }))
+    setTitleSuggestions([])
 
-      {form.imagePreview ? (
-        <div className="relative rounded-xl overflow-hidden">
-          <img src={form.imagePreview} alt="Preview"
-            className="w-full h-36 object-cover rounded-xl" />
-          <button
-            type="button"
-            onClick={() => setForm((prev) => ({ ...prev, image: null, imagePreview: null }))}
-            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60
-                       hover:bg-black/80 flex items-center justify-center text-white transition-colors"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/50 text-white text-xs">
-            {form.image?.name}
-          </span>
-        </div>
-      ) : (
-        <label className="border-2 border-dashed border-border/50 hover:border-primary/50
-                           rounded-xl h-28 flex flex-col items-center justify-center gap-1.5
-                           cursor-pointer transition-colors hover:bg-muted/20 group">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center
-                          group-hover:bg-primary/20 transition-colors">
-            <ImagePlus className="w-5 h-5 text-primary" />
-          </div>
-          <p className="text-xs font-medium">Click to upload image</p>
-          <p className="text-xs text-muted-foreground">JPG, PNG, WEBP - max 5MB</p>
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files[0]
-              if (!file) return
-              if (file.size > 5 * 1024 * 1024) return
-              const reader = new FileReader()
-              reader.onload = (ev) =>
-                setForm((prev) => ({ ...prev, image: file, imagePreview: ev.target.result }))
-              reader.readAsDataURL(file)
-            }}
-          />
+    if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current)
+
+    // Suggest after minimum 10 characters
+    if (value.trim().length < 10) return
+
+    titleDebounceRef.current = setTimeout(async () => {
+      setTitleSuggestLoading(true)
+      try {
+        // If content is also present, include it, otherwise use only title
+        const contextContent = form.content.trim()
+          ? form.content
+          : `Blog topic: ${value}`
+
+        const res = await axiosInstance.post("/ai/suggest-titles", {
+          content: contextContent,
+        })
+
+        const lines = (res.data.titles || "")
+          .split("\n")
+          .map((l) => l.replace(/^\d+[\.\)]\s*/, "").replace(/\*\*/g, "").trim())
+          .filter((l) => l.length > 5)
+          .slice(0, 5)
+
+        setTitleSuggestions(lines)
+      } catch {
+        // silent
+      } finally {
+        setTitleSuggestLoading(false)
+      }
+    }, 900) // 900ms debounce — type karne ke baad thoda ruko
+  }
+
+  // ─────────────────────────────────────────────────
+  // CONTENT: type karte waqt VS Code jaise suggest
+  // ─────────────────────────────────────────────────
+  const handleContentChange = (e) => {
+    const value = e.target.value
+    setForm((prev) => ({ ...prev, content: value }))
+    setContentSuggestion("")
+
+    if (contentDebounceRef.current) clearTimeout(contentDebounceRef.current)
+
+    // Suggest after minimum 1 word is typed
+    if (value.trim().length < 3) return
+
+    contentDebounceRef.current = setTimeout(async () => {
+      setContentSuggestLoading(true)
+      try {
+        // Include title as context — gives better suggestions
+        const titleContext = form.title.trim()
+          ? `Blog Title: "${form.title}"\n\nContent so far:\n`
+          : ""
+
+        const res = await axiosInstance.post("/ai/suggest-content", {
+          content: titleContext + value,
+        })
+
+        // Backend returns { suggestion: "..." }
+        const suggestion = (res.data.suggestion || "")
+          .replace(/\*\*/g, "")
+          .trim()
+          .split("\n")[0] // take only the first line
+
+        if (suggestion && suggestion.length > 3) {
+          setContentSuggestion(suggestion)
+        }
+      } catch {
+        // silent
+      } finally {
+        setContentSuggestLoading(false)
+      }
+    }, 600) // 600ms debounce — fast suggest
+  }
+
+  // Tab = accept, Escape = dismiss
+  const handleContentKeyDown = (e) => {
+    if (e.key === "Tab" && contentSuggestion) {
+      e.preventDefault()
+      setForm((prev) => ({ ...prev, content: prev.content + " " + contentSuggestion }))
+      setContentSuggestion("")
+    }
+    if (e.key === "Escape") {
+      setContentSuggestion("")
+      setTitleSuggestions([])
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+
+      {/* ── TITLE ── */}
+      <div>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+          Title
         </label>
-      )}
-    </div>
 
-    <div>
-      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
-        Content
-      </label>
-      <textarea
-        rows={5}
-        className="w-full bg-muted/30 border border-border/50 rounded-xl px-4 py-2.5 text-sm
-                   outline-none focus:border-primary focus:bg-background transition-colors resize-none"
-        placeholder="Blog ka content likhein..."
-        value={form.content}
-        onChange={(e) => setForm((prev) => ({ ...prev, content: e.target.value }))}
-      />
-    </div>
+        <div className="relative">
+          <input
+            className="w-full bg-muted/30 border border-border/50 rounded-xl px-4 py-2.5 text-sm
+                       outline-none focus:border-primary focus:bg-background transition-colors pr-10"
+            placeholder="Type your blog title..."
+            value={form.title}
+            onChange={handleTitleChange}
+          />
+          {/* Loading spinner inside input */}
+          {titleSuggestLoading && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-400" />
+            </div>
+          )}
+        </div>
 
-    <button
-      onClick={onSubmit}
-      disabled={submitting}
-      className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary
-                 text-primary-foreground rounded-xl text-sm font-semibold
-                 hover:opacity-90 disabled:opacity-50 transition-opacity"
-    >
-      {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-      {submitting ? "Processing..." : submitLabel}
-    </button>
-  </div>
-)
+        {/* Title AI suggestions — type karte waqt neeche aate hain */}
+        {titleSuggestions.length > 0 && (
+          <div className="mt-2 rounded-xl border border-violet-500/20 bg-violet-500/5 overflow-hidden">
+            <div className="flex items-center gap-1.5 px-3 py-2 border-b border-violet-500/10">
+              <Sparkles className="w-3 h-3 text-violet-400" />
+              <p className="text-xs text-violet-400 font-medium">AI Title Suggestions — click to use</p>
+              <button
+                type="button"
+                onClick={() => setTitleSuggestions([])}
+                className="ml-auto text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+            {titleSuggestions.map((title, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  setForm((prev) => ({ ...prev, title }))
+                  setTitleSuggestions([])
+                }}
+                className="w-full text-left px-3 py-2 text-xs hover:bg-violet-500/10
+                           hover:text-violet-300 transition-colors border-b border-violet-500/10
+                           last:border-0 text-foreground/80"
+              >
+                <span className="text-violet-400/60 mr-2">{i + 1}.</span>
+                {title}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── CATEGORY ── */}
+      <div>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+          Category
+        </label>
+        <select
+          className="w-full bg-muted/30 border border-border/50 rounded-xl px-4 py-2.5 text-sm
+                     outline-none focus:border-primary focus:bg-background transition-colors"
+          value={form.categoryId}
+          onChange={(e) => setForm((prev) => ({ ...prev, categoryId: e.target.value }))}
+        >
+          <option value="">Select a category</option>
+          {categories.map((cat) => (
+            <option key={cat.ID} value={cat.ID}>{cat.catName}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* ── COVER IMAGE ── */}
+      <div>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+          Cover Image <span className="text-muted-foreground/50 font-normal normal-case">(optional)</span>
+        </label>
+
+        {form.imagePreview ? (
+          <div className="relative rounded-xl overflow-hidden">
+            <img src={form.imagePreview} alt="Preview"
+              className="w-full h-36 object-cover rounded-xl" />
+            <button
+              type="button"
+              onClick={() => setForm((prev) => ({ ...prev, image: null, imagePreview: null }))}
+              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60
+                         hover:bg-black/80 flex items-center justify-center text-white transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+            <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/50 text-white text-xs">
+              {form.image?.name}
+            </span>
+          </div>
+        ) : (
+          <label className="border-2 border-dashed border-border/50 hover:border-primary/50
+                             rounded-xl h-28 flex flex-col items-center justify-center gap-1.5
+                             cursor-pointer transition-colors hover:bg-muted/20 group">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center
+                            group-hover:bg-primary/20 transition-colors">
+              <ImagePlus className="w-5 h-5 text-primary" />
+            </div>
+            <p className="text-xs font-medium">Click to upload image</p>
+            <p className="text-xs text-muted-foreground">JPG, PNG, WEBP - max 5MB</p>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files[0]
+                if (!file) return
+                if (file.size > 5 * 1024 * 1024) return
+                const reader = new FileReader()
+                reader.onload = (ev) =>
+                  setForm((prev) => ({ ...prev, image: file, imagePreview: ev.target.result }))
+                reader.readAsDataURL(file)
+              }}
+            />
+          </label>
+        )}
+      </div>
+
+      {/* ── CONTENT with VS Code style AI autocomplete ── */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Content
+          </label>
+          {contentSuggestLoading && (
+            <div className="flex items-center gap-1 text-xs text-violet-400">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              <span>AI thinking...</span>
+            </div>
+          )}
+        </div>
+
+        <textarea
+          ref={textareaRef}
+          rows={6}
+          className="w-full bg-muted/30 border border-border/50 rounded-xl px-4 py-2.5 text-sm
+                     outline-none focus:border-primary focus:bg-background transition-colors resize-none"
+          placeholder="Start writing your blog content... (AI will suggest as you type)"
+          value={form.content}
+          onChange={handleContentChange}
+          onKeyDown={handleContentKeyDown}
+        />
+
+        {/* VS Code style suggestion box */}
+        {contentSuggestion && (
+          <div className="mt-1.5 px-4 py-2.5 rounded-xl bg-violet-500/5 border border-violet-500/20
+                          flex items-start justify-between gap-3">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              <Sparkles className="w-3.5 h-3.5 text-violet-400 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-violet-300/90 italic leading-relaxed">
+                {contentSuggestion}
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setForm((prev) => ({ ...prev, content: prev.content + " " + contentSuggestion }))
+                  setContentSuggestion("")
+                }}
+                className="text-xs px-2 py-1 rounded-lg bg-violet-500/20 text-violet-300
+                           hover:bg-violet-500/30 transition-colors font-semibold whitespace-nowrap"
+              >
+                Tab ↹
+              </button>
+              <button
+                type="button"
+                onClick={() => setContentSuggestion("")}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground/60 mt-1.5">
+          💡 Press <kbd className="px-1 py-0.5 rounded bg-muted text-xs font-mono">Tab</kbd> to accept AI suggestion · <kbd className="px-1 py-0.5 rounded bg-muted text-xs font-mono">Esc</kbd> to dismiss
+        </p>
+      </div>
+
+      <button
+        onClick={onSubmit}
+        disabled={submitting}
+        className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary
+                   text-primary-foreground rounded-xl text-sm font-semibold
+                   hover:opacity-90 disabled:opacity-50 transition-opacity"
+      >
+        {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+        {submitting ? "Processing..." : submitLabel}
+      </button>
+    </div>
+  )
+}
 
 export default function MyBlogs() {
   const { user } = useSelector((s) => s.auth)
@@ -167,7 +370,7 @@ export default function MyBlogs() {
       setBlogs(mine)
       setCategories(cats)
     } catch {
-      setError("Data load nahi hua. Backend check karo.")
+      setError("Failed to load data. Please check backend.")
     } finally {
       setLoading(false)
     }
@@ -182,7 +385,7 @@ export default function MyBlogs() {
 
   const handleCreate = async () => {
     if (!form.title.trim() || !form.content.trim() || !form.categoryId) {
-      showMsg("error", "Saare fields bharo."); return
+      showMsg("error", "Please fill all fields."); return
     }
     setSubmitting(true)
     try {
@@ -199,12 +402,12 @@ export default function MyBlogs() {
       if (form.image) formData.append("image", form.image)
 
       await axiosInstance.post("/posts", formData)
-      showMsg("success", "Blog successfully create hua! ")
+      showMsg("success", "Blog created successfully! 🎉")
       setShowCreate(false)
       setForm({ title: "", content: "", categoryId: "", image: null, imagePreview: null })
       fetchData()
     } catch (err) {
-      showMsg("error", err?.response?.data?.message || err?.response?.data?.error || "Blog create nahi hua: " + (err?.response?.status || "Network error"))
+      showMsg("error", err?.response?.data?.message || err?.response?.data?.error || "Blog creation failed: " + (err?.response?.status || "Network error"))
     } finally {
       setSubmitting(false)
     }
@@ -224,7 +427,7 @@ export default function MyBlogs() {
 
   const handleEdit = async () => {
     if (!form.title.trim() || !form.content.trim() || !form.categoryId) {
-      showMsg("error", "Saare fields bharo."); return
+      showMsg("error", "Please fill all fields."); return
     }
     setSubmitting(true)
     try {
@@ -234,12 +437,12 @@ export default function MyBlogs() {
         categoryID: Number(form.categoryId),
         authorID:   Number(user?.id),
       })
-      showMsg("success", "Blog update ho gaya! ")
+      showMsg("success", "Blog updated successfully! 🎉")
       setShowEdit(false)
       setForm({ title: "", content: "", categoryId: "", image: null, imagePreview: null })
       fetchData()
     } catch {
-      showMsg("error", "Blog update nahi hua. Dobara try karo.")
+      showMsg("error", "Blog update failed. Please try again.")
     } finally {
       setSubmitting(false)
     }
@@ -249,11 +452,11 @@ export default function MyBlogs() {
     setSubmitting(true)
     try {
       await axiosInstance.delete(`/posts/${id}`)
-      showMsg("success", "Blog delete ho gaya! ")
+      showMsg("success", "Blog deleted successfully!")
       setShowDelete(null)
       fetchData()
     } catch {
-      showMsg("error", "Blog delete nahi hua.")
+      showMsg("error", "Blog deletion failed.")
     } finally {
       setSubmitting(false)
     }
@@ -350,7 +553,7 @@ export default function MyBlogs() {
               <input
                 className="w-full bg-muted/30 border border-border/50 rounded-xl pl-11 pr-4 py-2.5 text-sm
                            outline-none focus:border-primary focus:bg-background transition-colors"
-                placeholder="Blog search karo..."
+                placeholder="Search blogs..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(0) }}
               />
@@ -377,10 +580,10 @@ export default function MyBlogs() {
                 </div>
                 <div>
                   <p className="font-semibold text-base mb-1">
-                    {search ? "Koi blog nahi mila" : "Abhi koi blog nahi hai"}
+                    {search ? "No blogs found" : "No blogs yet"}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {search ? `"${search}" se koi match nahi mila` : "Pehla blog likhna shuru karo!"}
+                    {search ? `No results for "${search}"` : "Start writing your first blog!"}
                   </p>
                 </div>
                 {!search && (
@@ -392,7 +595,7 @@ export default function MyBlogs() {
                     className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground
                                rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
                   >
-                    <PlusCircle className="w-4 h-4" /> Pehla Blog Likho
+                    <PlusCircle className="w-4 h-4" /> Write First Blog
                   </button>
                 )}
               </div>
@@ -405,7 +608,6 @@ export default function MyBlogs() {
                       key={blog.ID || blog.id}
                       className="glass-card rounded-2xl overflow-hidden flex flex-col hover:shadow-lg smooth-transition group"
                     >
-                      {/* Cover Image */}
                       <div className="relative h-40 bg-muted flex-shrink-0">
                         {blog.imageUrl ? (
                           <img
@@ -475,7 +677,6 @@ export default function MyBlogs() {
                   ))}
                 </div>
 
-                {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex flex-col items-center gap-3 pt-4">
                     <div className="border-t border-border/40 w-full" />
@@ -526,20 +727,19 @@ export default function MyBlogs() {
                 )}
               </>
             )}
-
           </div>
         </main>
       </div>
 
       {/* CREATE MODAL */}
       {showCreate && (
-        <Modal title="Naya Blog Likho " onClose={() => setShowCreate(false)}>
+        <Modal title="Write New Blog ✍️" onClose={() => setShowCreate(false)}>
           <BlogForm
             form={form}
             setForm={setForm}
             categories={categories}
             onSubmit={handleCreate}
-            submitLabel="Blog Create Karo"
+            submitLabel="Create Blog"
             submitting={submitting}
           />
         </Modal>
@@ -547,13 +747,13 @@ export default function MyBlogs() {
 
       {/* EDIT MODAL */}
       {showEdit && (
-        <Modal title="Blog Edit Karo " onClose={() => setShowEdit(false)}>
+        <Modal title="Edit Blog ✏️" onClose={() => setShowEdit(false)}>
           <BlogForm
             form={form}
             setForm={setForm}
             categories={categories}
             onSubmit={handleEdit}
-            submitLabel="Changes Save Karo"
+            submitLabel="Save Changes"
             submitting={submitting}
           />
         </Modal>
@@ -566,9 +766,9 @@ export default function MyBlogs() {
             <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-7 h-7 text-red-500" />
             </div>
-            <h3 className="text-lg font-bold mb-2">Blog Delete Karo?</h3>
+            <h3 className="text-lg font-bold mb-2">Delete Blog?</h3>
             <p className="text-sm text-muted-foreground mb-6">
-              Yeh action undo nahi ho sakta. Blog permanently delete ho jaayega.
+              This action cannot be undone. Blog will be permanently deleted.
             </p>
             <div className="flex gap-3">
               <button

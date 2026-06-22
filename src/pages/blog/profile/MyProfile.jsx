@@ -21,11 +21,11 @@ export default function MyProfile() {
     const load = async () => {
       try {
         const [postsRes, catsRes] = await Promise.all([
-          axiosInstance.get("/posts/all"),   // ✅ sahi endpoint
+          axiosInstance.get("/posts/all"),   // ✅ correct endpoint
           axiosInstance.get("/categories"),
         ])
         const all  = Array.isArray(postsRes.data) ? postsRes.data : []
-        // User ke apne posts filter karo authorName se (same as Dashboard)
+        // Filter user's own posts by authorName (same as Dashboard)
         const mine = all.filter(
           (p) => p.authorName?.toLowerCase().trim() === user?.fullName?.toLowerCase().trim()
         )

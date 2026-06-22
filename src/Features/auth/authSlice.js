@@ -58,7 +58,7 @@ const authSlice = createSlice({
         state.loading = false
         state.user    = action.payload?.user  || null
         state.token   = action.payload?.token || null
-        // token aur user dono localStorage mein save karo
+        // save both token and user to localStorage
         if (action.payload?.token) {
           localStorage.setItem("token", action.payload.token)
           localStorage.setItem("user",  JSON.stringify(action.payload.user))

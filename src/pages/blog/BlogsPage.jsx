@@ -53,7 +53,7 @@ function BlogCard({ post }) {
       <div className={`relative h-44 bg-gradient-to-br ${color} flex items-center justify-center flex-shrink-0`}>
         {post.imageUrl ? (
           <img
-            src={post.imageUrl.startsWith("/uploads") ? `${import.meta.env.VITE_API_BASE_URL || "http://localhost:7000"}${post.imageUrl}` : post.imageUrl}
+            src={post.imageUrl.startsWith("/uploads") ? `${import.meta.env.VITE_API_BASE_URL || "https://bloghub-rrph.onrender.com"}${post.imageUrl}` : post.imageUrl}
             alt={post.title}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />

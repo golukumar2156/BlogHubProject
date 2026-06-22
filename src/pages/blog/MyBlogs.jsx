@@ -613,7 +613,7 @@ export default function MyBlogs() {
                           <img
                             src={
                               blog.imageUrl.startsWith("/uploads")
-                                ? `${import.meta.env.VITE_API_BASE_URL || "http://localhost:7000"}${blog.imageUrl}`
+                                ? `${import.meta.env.VITE_API_BASE_URL || "https://bloghub-rrph.onrender.com"}${blog.imageUrl}`
                                 : blog.imageUrl
                             }
                             alt={blog.title}

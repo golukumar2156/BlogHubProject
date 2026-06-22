@@ -1,8 +1,10 @@
 import axios from "axios"
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://bloghub-rrph.onrender.com/api"
+
 // ── Authenticated instance (with JWT) ──
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:7000/api",
+  baseURL: BASE_URL,
 })
 
 axiosInstance.interceptors.request.use(
@@ -11,9 +13,6 @@ axiosInstance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    // ── KEY FIX: let browser set Content-Type for FormData ──
-    // If body is FormData, delete any default Content-Type
-    // so axios/browser auto-sets multipart/form-data with correct boundary
     if (config.data instanceof FormData) {
       delete config.headers["Content-Type"]
     } else if (!config.headers["Content-Type"]) {
@@ -26,7 +25,7 @@ axiosInstance.interceptors.request.use(
 
 // ── Public instance (no JWT — for blogs, categories) ──
 export const publicAxios = axios.create({
-  baseURL: "http://localhost:7000/api",
+  baseURL: BASE_URL,
   headers: { "Content-Type": "application/json" },
 })
 

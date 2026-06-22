@@ -107,7 +107,7 @@ export default function Dashboard() {
   )
 
   const getErrorMsg = () => {
-    if (error === "no_server")    return "Backend server is not running (localhost:7000). Please start the server and refresh the page."
+    if (error === "no_server")    return "Backend server is not reachable. Please try again later."
     if (error === "unauthorized") return "Session has expired. Please logout and login again."
     return `Server error. (${error})`
   }

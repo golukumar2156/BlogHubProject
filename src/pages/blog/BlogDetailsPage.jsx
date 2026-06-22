@@ -624,7 +624,7 @@ export default function BlogDetailsPage() {
   const categoryName = post.categoryName || post.category?.catName || post.category || null
   const rawImageUrl  = post.imageUrl || post.image || post.coverImage || null
   const imageUrl     = rawImageUrl && rawImageUrl.startsWith("/uploads")
-                       ? `${import.meta.env.VITE_API_BASE_URL || "http://localhost:7000"}${rawImageUrl}`
+                       ? `${import.meta.env.VITE_API_BASE_URL || "https://bloghub-rrph.onrender.com"}${rawImageUrl}`
                        : rawImageUrl
   const createdAt    = post.createdAt || post.publishedAt || null
   const formattedDate = createdAt

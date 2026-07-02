@@ -12,46 +12,42 @@ import {
   Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell,
 } from "recharts";
 import SmartBlogFinder from "./SmartBlogFinder";
+import { useLang } from "@/i18n/LanguageContext";
 
 // ── Data ──────────────────────────────────────────────────────
-const slides = [
-  { id:1, image:"https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=900&q=85", label:"Technology" },
-  { id:2, image:"https://images.unsplash.com/photo-1455390582262-044cdead277a?w=900&q=85", label:"Writing"    },
-  { id:3, image:"https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=900&q=85", label:"Community"  },
-  { id:4, image:"https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=900&q=85", label:"Design"     },
+// Slide labels keyed so they can be translated
+const slideMeta = [
+  { id:1, image:"https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=900&q=85", key:"technology" },
+  { id:2, image:"https://images.unsplash.com/photo-1455390582262-044cdead277a?w=900&q=85", key:"writing"    },
+  { id:3, image:"https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=900&q=85", key:"community"  },
+  { id:4, image:"https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=900&q=85", key:"design"     },
 ];
 
-const trending = [
-  { id:1, category:"Tutorial",    icon:Code2,      title:"Getting Started with Next.js 14",       author:"Alex Johnson",   readTime:8,  likes:342, color:"from-violet-500 to-indigo-500"  },
-  { id:2, category:"CSS",         icon:Palette,    title:"CSS Grid vs Flexbox: When to Use Each", author:"Lisa Moore",     readTime:5,  likes:218, color:"from-cyan-500 to-blue-500"      },
-  { id:3, category:"Backend",     icon:Globe,      title:"Building Scalable Node.js Apps",        author:"Mike Chen",      readTime:12, likes:456, color:"from-emerald-500 to-teal-500"   },
-  { id:4, category:"TypeScript",  icon:Zap,        title:"Advanced TypeScript Patterns",          author:"Sarah Williams", readTime:10, likes:289, color:"from-amber-500 to-orange-500"   },
-  { id:5, category:"API Design",  icon:Lightbulb,  title:"The Art of API Design",                 author:"David Brown",    readTime:9,  likes:312, color:"from-rose-500 to-pink-500"      },
-  { id:6, category:"Performance", icon:TrendingUp, title:"Web Performance Optimization Tips",     author:"Emma Davis",     readTime:7,  likes:198, color:"from-fuchsia-500 to-purple-500" },
+// Trending post metadata — title/author are demo blog content;
+// catKey resolves to the translated category label at render time
+const trendingMeta = [
+  { id:1, catKey:"tutorial",   icon:Code2,      title:"Getting Started with Next.js 14",       author:"Alex Johnson",   readTime:8,  likes:342, color:"from-violet-500 to-indigo-500"  },
+  { id:2, catKey:"design",     icon:Palette,    title:"CSS Grid vs Flexbox: When to Use Each", author:"Lisa Moore",     readTime:5,  likes:218, color:"from-cyan-500 to-blue-500"      },
+  { id:3, catKey:"backend",    icon:Globe,      title:"Building Scalable Node.js Apps",        author:"Mike Chen",      readTime:12, likes:456, color:"from-emerald-500 to-teal-500"   },
+  { id:4, catKey:"technology", icon:Zap,        title:"Advanced TypeScript Patterns",          author:"Sarah Williams", readTime:10, likes:289, color:"from-amber-500 to-orange-500"   },
+  { id:5, catKey:"business",   icon:Lightbulb,  title:"The Art of API Design",                 author:"David Brown",    readTime:9,  likes:312, color:"from-rose-500 to-pink-500"      },
+  { id:6, catKey:"technology", icon:TrendingUp, title:"Web Performance Optimization Tips",     author:"Emma Davis",     readTime:7,  likes:198, color:"from-fuchsia-500 to-purple-500" },
 ];
 
-const categories = [
-  { label:"Technology", icon:Globe,      color:"bg-violet-500/15 text-violet-500 border-violet-500/30"   },
-  { label:"Design",     icon:Palette,    color:"bg-pink-500/15 text-pink-500 border-pink-500/30"         },
-  { label:"Tutorial",   icon:BookOpen,   color:"bg-cyan-500/15 text-cyan-500 border-cyan-500/30"         },
-  { label:"Backend",    icon:Code2,      color:"bg-emerald-500/15 text-emerald-500 border-emerald-500/30"},
-  { label:"Lifestyle",  icon:Coffee,     color:"bg-amber-500/15 text-amber-500 border-amber-500/30"      },
-  { label:"Business",   icon:TrendingUp, color:"bg-rose-500/15 text-rose-500 border-rose-500/30"         },
+const categoryMeta = [
+  { key:"technology", icon:Globe,      color:"bg-violet-500/15 text-violet-500 border-violet-500/30"   },
+  { key:"design",     icon:Palette,    color:"bg-pink-500/15 text-pink-500 border-pink-500/30"         },
+  { key:"tutorial",   icon:BookOpen,   color:"bg-cyan-500/15 text-cyan-500 border-cyan-500/30"         },
+  { key:"backend",    icon:Code2,      color:"bg-emerald-500/15 text-emerald-500 border-emerald-500/30"},
+  { key:"lifestyle",  icon:Coffee,     color:"bg-amber-500/15 text-amber-500 border-amber-500/30"      },
+  { key:"business",   icon:TrendingUp, color:"bg-rose-500/15 text-rose-500 border-rose-500/30"         },
 ];
 
-const stats = [
-  { value:"12K+", label:"Articles", icon:BookOpen, color:"text-violet-500" },
-  { value:"4.8K", label:"Writers",  icon:PenLine,  color:"text-cyan-500"   },
-  { value:"98K+", label:"Readers",  icon:Users,    color:"text-emerald-500"},
-  { value:"200+", label:"Topics",   icon:Sparkles, color:"text-rose-500"   },
-];
-
-const features = ["Free to read & publish","No ads, ever","Join 4,800+ writers"];
-
-const testimonials = [
-  { name:"Priya Sharma",    role:"Software Engineer",    text:"BlogHub changed the way I learn. The quality of writing here is unmatched.", avatar:"P" },
-  { name:"James Walker",    role:"UX Designer",          text:"I published my first article here and got 2,000 reads in a week. Amazing community.", avatar:"J" },
-  { name:"Anjali Mehra",    role:"Product Manager",      text:"The best place to stay updated on tech. I read at least 3 articles every morning.", avatar:"A" },
+const statMeta = [
+  { value:"12K+", key:"statArticles", icon:BookOpen, color:"text-violet-500" },
+  { value:"4.8K", key:"statWriters",  icon:PenLine,  color:"text-cyan-500"   },
+  { value:"98K+", key:"statReaders",  icon:Users,    color:"text-emerald-500"},
+  { value:"200+", key:"statTopics",   icon:Sparkles, color:"text-rose-500"   },
 ];
 
 // Chart data
@@ -70,12 +66,12 @@ const growthData = [
   { month:"Dec", articles:12400, writers:4800 },
 ];
 
-const categoryData = [
-  { name:"Technology", value:34, color:"#8b5cf6" },
-  { name:"Design",     value:22, color:"#06b6d4" },
-  { name:"Tutorial",   value:18, color:"#10b981" },
-  { name:"Backend",    value:14, color:"#f59e0b" },
-  { name:"Other",      value:12, color:"#f43f5e" },
+const categoryDataMeta = [
+  { key:"technology", value:34, color:"#8b5cf6" },
+  { key:"design",     value:22, color:"#06b6d4" },
+  { key:"tutorial",   value:18, color:"#10b981" },
+  { key:"backend",    value:14, color:"#f59e0b" },
+  { key:"other",      value:12, color:"#f43f5e" },
 ];
 
 const weeklyData = [
@@ -106,11 +102,15 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 // ── Slide Panel ────────────────────────────────────────────────
-function SlidePanel() {
+function SlidePanel({ home }) {
   const [cur,  setCur]  = useState(0);
   const [prev, setPrev] = useState(null);
   const [anim, setAnim] = useState(false);
   const timer = useRef(null);
+  const slides = useMemo(
+    () => slideMeta.map(s => ({ ...s, label: home.slides[s.key] })),
+    [home]
+  );
   const N = slides.length;
 
   const goTo = (idx) => {
@@ -194,7 +194,7 @@ function SlidePanel() {
 }
 
 // ── Blog Card ──────────────────────────────────────────────────
-function BlogCard({ blog }) {
+function BlogCard({ blog, home }) {
   const Icon = blog.icon;
   return (
     <div className="group glass-card rounded-2xl p-5 hover:shadow-xl transition-all duration-300
@@ -205,7 +205,7 @@ function BlogCard({ blog }) {
           <Icon className="w-5 h-5 text-white" />
         </div>
         <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted/60 text-muted-foreground border border-border/40">
-          {blog.category}
+          {home.categories[blog.catKey]}
         </span>
       </div>
       <h3 className="font-bold text-sm sm:text-base leading-snug group-hover:text-primary transition-colors line-clamp-2 flex-1">
@@ -214,7 +214,7 @@ function BlogCard({ blog }) {
       <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/30">
         <span className="truncate max-w-[120px] font-medium">{blog.author}</span>
         <div className="flex items-center gap-3 flex-shrink-0">
-          <span>{blog.readTime} min read</span>
+          <span>{blog.readTime} {home.minRead}</span>
           <span className="flex items-center gap-1">
             <Heart className="w-3 h-3 fill-rose-400 text-rose-400" />{blog.likes}
           </span>
@@ -225,19 +225,19 @@ function BlogCard({ blog }) {
 }
 
 // ── Testimonial Card ───────────────────────────────────────────
-function TestimonialCard({ t }) {
+function TestimonialCard({ item }) {
   return (
     <div className="glass-card rounded-2xl p-6 border border-border/50 flex flex-col gap-4">
       <Quote className="w-6 h-6 text-primary/40" />
-      <p className="text-sm text-muted-foreground leading-relaxed flex-1">"{t.text}"</p>
+      <p className="text-sm text-muted-foreground leading-relaxed flex-1">"{item.text}"</p>
       <div className="flex items-center gap-3 pt-3 border-t border-border/30">
         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/60 to-accent/60
                         flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-          {t.avatar}
+          {item.avatar}
         </div>
         <div>
-          <p className="text-sm font-semibold">{t.name}</p>
-          <p className="text-xs text-muted-foreground">{t.role}</p>
+          <p className="text-sm font-semibold">{item.name}</p>
+          <p className="text-xs text-muted-foreground">{item.role}</p>
         </div>
       </div>
     </div>
@@ -249,6 +249,8 @@ function TestimonialCard({ t }) {
 // ════════════════════════════════════════════
 const HomePage = () => {
   const navigate = useNavigate();
+  const { t } = useLang();
+  const home = t.home;
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -275,14 +277,14 @@ const HomePage = () => {
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full
                                 bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-6">
                   <Sparkles className="w-3.5 h-3.5" />
-                  The home for curious minds
+                  {home.badge}
                 </div>
 
                 <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold leading-[1.1] tracking-tight mb-5">
-                  Read, Write &{" "}
+                  {home.heroLine1}{" "}
                   <span className="relative inline-block">
                     <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">
-                      Inspire
+                      {home.heroHighlight}
                     </span>
                     <svg className="absolute -bottom-1 left-0 w-full" height="6" viewBox="0 0 200 6" fill="none" preserveAspectRatio="none">
                       <path d="M0 5 Q50 0 100 5 Q150 10 200 5" stroke="url(#u1)" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
@@ -293,16 +295,15 @@ const HomePage = () => {
                       </defs>
                     </svg>
                   </span>
-                  {" "}the World
+                  {" "}{home.heroLine2}
                 </h1>
 
                 <p className="text-muted-foreground text-base sm:text-lg leading-relaxed mb-7 max-w-lg">
-                  BlogHub is where ideas live. Discover thousands of stories on technology,
-                  design, culture and more — or share your own voice with the world.
+                  {home.heroDesc}
                 </p>
 
                 <div className="flex flex-col gap-2 mb-8">
-                  {features.map(f => (
+                  {home.features.map(f => (
                     <div key={f} className="flex items-center gap-2.5 text-sm text-muted-foreground">
                       <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                       {f}
@@ -317,23 +318,23 @@ const HomePage = () => {
                                text-white font-semibold text-sm
                                shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50
                                hover:scale-[1.02] transition-all duration-200">
-                    Start Reading <ArrowRight className="w-4 h-4" />
+                    {home.startReading} <ArrowRight className="w-4 h-4" />
                   </button>
                   <button onClick={() => navigate("/register")}
                     className="flex items-center gap-2 px-6 py-3 rounded-xl border border-border
                                bg-background hover:bg-muted/50 font-semibold text-sm transition-all">
-                    <PenLine className="w-4 h-4" /> Start Writing
+                    <PenLine className="w-4 h-4" /> {home.startWriting}
                   </button>
                 </div>
 
                 <div className="flex flex-wrap gap-x-6 gap-y-3 pt-6 border-t border-border/40">
-                  {stats.map((s) => {
+                  {statMeta.map((s) => {
                     const Icon = s.icon;
                     return (
-                      <div key={s.label} className="flex items-center gap-2">
+                      <div key={s.key} className="flex items-center gap-2">
                         <Icon className={`w-4 h-4 ${s.color}`} />
                         <span className="font-extrabold text-sm">{s.value}</span>
-                        <span className="text-xs text-muted-foreground">{s.label}</span>
+                        <span className="text-xs text-muted-foreground">{home[s.key]}</span>
                       </div>
                     );
                   })}
@@ -344,7 +345,7 @@ const HomePage = () => {
               <div className="order-1 lg:order-2 relative">
                 <div className="absolute -inset-4 bg-gradient-to-br from-violet-500/15 via-fuchsia-500/8 to-cyan-500/15 rounded-3xl blur-2xl pointer-events-none" />
                 <div className="relative" style={{ height:"clamp(300px,50vw,560px)" }}>
-                  <SlidePanel />
+                  <SlidePanel home={home} />
                 </div>
 
                 {/* floating cards */}
@@ -355,8 +356,8 @@ const HomePage = () => {
                     <TrendingUp className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold">Trending Today</p>
-                    <p className="text-[11px] text-muted-foreground">456 new articles</p>
+                    <p className="text-xs font-bold">{home.trendingToday}</p>
+                    <p className="text-[11px] text-muted-foreground">{home.newArticles}</p>
                   </div>
                 </div>
 
@@ -367,8 +368,8 @@ const HomePage = () => {
                     <Users className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold">4,800+ Writers</p>
-                    <p className="text-[11px] text-muted-foreground">Join the community</p>
+                    <p className="text-xs font-bold">{home.writersCount}</p>
+                    <p className="text-[11px] text-muted-foreground">{home.joinCommunity}</p>
                   </div>
                 </div>
               </div>
@@ -385,10 +386,10 @@ const HomePage = () => {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full
                               bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-2">
-                <BarChart2 className="w-3.5 h-3.5" /> Platform Insights
+                <BarChart2 className="w-3.5 h-3.5" /> {home.insightsBadge}
               </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold">Growing every month</h2>
-              <p className="text-muted-foreground text-sm mt-1">Real numbers — BlogHub's growth in 2024</p>
+              <h2 className="text-2xl sm:text-3xl font-extrabold">{home.growingTitle}</h2>
+              <p className="text-muted-foreground text-sm mt-1">{home.growingDesc}</p>
             </div>
           </div>
 
@@ -398,17 +399,17 @@ const HomePage = () => {
             <div className="lg:col-span-2 glass-card rounded-2xl p-5 border border-border/50">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-bold text-sm">Articles & Writers Growth</h3>
-                  <p className="text-xs text-muted-foreground">Jan — Dec 2024</p>
+                  <h3 className="font-bold text-sm">{home.growthChartTitle}</h3>
+                  <p className="text-xs text-muted-foreground">{home.growthChartRange}</p>
                 </div>
                 <div className="flex items-center gap-4 text-xs">
                   <div className="flex items-center gap-1.5">
                     <span className="w-3 h-1.5 rounded-full bg-violet-500 inline-block"/>
-                    <span className="text-muted-foreground">Articles</span>
+                    <span className="text-muted-foreground">{home.articlesLabel}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-3 h-1.5 rounded-full bg-cyan-500 inline-block"/>
-                    <span className="text-muted-foreground">Writers</span>
+                    <span className="text-muted-foreground">{home.writersLabel}</span>
                   </div>
                 </div>
               </div>
@@ -428,22 +429,22 @@ const HomePage = () => {
                   <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize:11, fill:"hsl(var(--muted-foreground))" }} />
                   <YAxis tickLine={false} axisLine={false} tick={{ fontSize:11, fill:"hsl(var(--muted-foreground))" }} tickFormatter={v => v >= 1000 ? `${v/1000}k` : v} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="articles" name="Articles" stroke="#8b5cf6" strokeWidth={2} fill="url(#gArticles)" dot={false} />
-                  <Area type="monotone" dataKey="writers"  name="Writers"  stroke="#06b6d4" strokeWidth={2} fill="url(#gWriters)"  dot={false} />
+                  <Area type="monotone" dataKey="articles" name={home.articlesLabel} stroke="#8b5cf6" strokeWidth={2} fill="url(#gArticles)" dot={false} />
+                  <Area type="monotone" dataKey="writers"  name={home.writersLabel}  stroke="#06b6d4" strokeWidth={2} fill="url(#gWriters)"  dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
 
             {/* Pie Chart — Category split */}
             <div className="glass-card rounded-2xl p-5 border border-border/50 flex flex-col">
-              <h3 className="font-bold text-sm mb-1">Content by Category</h3>
-              <p className="text-xs text-muted-foreground mb-4">% of total articles</p>
+              <h3 className="font-bold text-sm mb-1">{home.categoryChartTitle}</h3>
+              <p className="text-xs text-muted-foreground mb-4">{home.categoryChartDesc}</p>
               <div className="flex-1 flex items-center justify-center">
                 <ResponsiveContainer width="100%" height={160}>
                   <PieChart>
-                    <Pie data={categoryData} cx="50%" cy="50%" innerRadius={45} outerRadius={72}
+                    <Pie data={categoryDataMeta} cx="50%" cy="50%" innerRadius={45} outerRadius={72}
                          dataKey="value" paddingAngle={3} strokeWidth={0}>
-                      {categoryData.map((entry, i) => (
+                      {categoryDataMeta.map((entry, i) => (
                         <Cell key={i} fill={entry.color} />
                       ))}
                     </Pie>
@@ -455,11 +456,11 @@ const HomePage = () => {
                 </ResponsiveContainer>
               </div>
               <div className="space-y-2 mt-2">
-                {categoryData.map((d) => (
-                  <div key={d.name} className="flex items-center justify-between text-xs">
+                {categoryDataMeta.map((d) => (
+                  <div key={d.key} className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background:d.color }} />
-                      <span className="text-muted-foreground">{d.name}</span>
+                      <span className="text-muted-foreground">{home.categories[d.key]}</span>
                     </div>
                     <span className="font-bold">{d.value}%</span>
                   </div>
@@ -471,12 +472,12 @@ const HomePage = () => {
             <div className="lg:col-span-3 glass-card rounded-2xl p-5 border border-border/50">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-bold text-sm">Weekly Read Activity</h3>
-                  <p className="text-xs text-muted-foreground">Average reads per day this week</p>
+                  <h3 className="font-bold text-sm">{home.weeklyChartTitle}</h3>
+                  <p className="text-xs text-muted-foreground">{home.weeklyChartDesc}</p>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs bg-emerald-500/10 text-emerald-500
                                 border border-emerald-500/20 rounded-full px-2.5 py-1">
-                  <TrendingUp className="w-3 h-3" /> +18% vs last week
+                  <TrendingUp className="w-3 h-3" /> {home.vsLastWeek}
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={180}>
@@ -502,21 +503,21 @@ const HomePage = () => {
         {/* ══ CATEGORIES ══ */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold">Explore Topics</h2>
+            <h2 className="text-xl sm:text-2xl font-bold">{home.exploreTopics}</h2>
             <button onClick={() => navigate("/categories")}
               className="text-sm text-primary hover:underline underline-offset-4 flex items-center gap-1">
-              View all <ArrowRight className="w-3.5 h-3.5" />
+              {home.viewAll} <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {categories.map((cat) => {
+            {categoryMeta.map((cat) => {
               const Icon = cat.icon;
               return (
-                <button key={cat.label} onClick={() => navigate("/blogs")}
+                <button key={cat.key} onClick={() => navigate("/blogs")}
                   className={`flex flex-col items-center gap-2 py-5 px-3 rounded-2xl border
                               font-medium text-sm transition-all hover:scale-[1.04] hover:shadow-lg ${cat.color}`}>
                   <Icon className="w-5 h-5" />
-                  {cat.label}
+                  {home.categories[cat.key]}
                 </button>
               );
             })}
@@ -527,15 +528,15 @@ const HomePage = () => {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-rose-400" /> Trending Now
+              <TrendingUp className="w-5 h-5 text-rose-400" /> {home.trendingNow}
             </h2>
             <button onClick={() => navigate("/blogs")}
               className="text-sm text-primary hover:underline underline-offset-4 flex items-center gap-1">
-              All articles <ArrowRight className="w-3.5 h-3.5" />
+              {home.allArticles} <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {trending.map((blog) => <BlogCard key={blog.id} blog={blog} />)}
+            {trendingMeta.map((blog) => <BlogCard key={blog.id} blog={blog} home={home} />)}
           </div>
         </section>
 
@@ -544,13 +545,13 @@ const HomePage = () => {
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full
                             bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-semibold mb-3">
-              <Award className="w-3.5 h-3.5" /> What readers say
+              <Award className="w-3.5 h-3.5" /> {home.whatReadersSay}
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold">Loved by thousands</h2>
-            <p className="text-muted-foreground text-sm mt-1">Real words from real community members</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold">{home.lovedByThousands}</h2>
+            <p className="text-muted-foreground text-sm mt-1">{home.realWords}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {testimonials.map((t, i) => <TestimonialCard key={i} t={t} />)}
+            {home.testimonials.map((item, i) => <TestimonialCard key={i} item={item} />)}
           </div>
         </section>
 
@@ -563,25 +564,25 @@ const HomePage = () => {
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full
                               bg-white/15 border border-white/20 text-white text-xs font-semibold mb-4">
-                <Star className="w-3.5 h-3.5 fill-white" /> Join 4,800+ writers today
+                <Star className="w-3.5 h-3.5 fill-white" /> {home.joinWritersToday}
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white mb-3">
-                Ready to share your story?
+                {home.readyToShare}
               </h2>
               <p className="text-white/75 text-sm sm:text-base max-w-md mx-auto mb-7">
-                Create your free account and start publishing to thousands of eager readers.
+                {home.readyToShareDesc}
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button onClick={() => navigate("/register")}
                   className="flex items-center justify-center gap-2 px-7 py-3 rounded-xl
                              bg-white text-indigo-700 font-bold text-sm hover:bg-white/90
                              shadow-xl transition-all hover:scale-[1.02]">
-                  Get Started Free <ArrowRight className="w-4 h-4" />
+                  {home.getStartedFree} <ArrowRight className="w-4 h-4" />
                 </button>
                 <button onClick={() => navigate("/login")}
                   className="flex items-center justify-center gap-2 px-7 py-3 rounded-xl
                              border border-white/30 text-white font-semibold text-sm hover:bg-white/10 transition-all">
-                  Already have an account?
+                  {home.alreadyHaveAccount}
                 </button>
               </div>
             </div>
@@ -593,10 +594,10 @@ const HomePage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-10">
               {[
-                { title:"Product",   links:["Features","Pricing","Security","Changelog"] },
-                { title:"Company",   links:["About","Blog","Careers","Press"]            },
-                { title:"Resources", links:["Docs","API","Support","Status"]             },
-                { title:"Legal",     links:["Privacy","Terms","Cookies","Contact"]       },
+                { title:home.footer.product,   links:home.footer.productLinks },
+                { title:home.footer.company,   links:home.footer.companyLinks },
+                { title:home.footer.resources, links:home.footer.resourcesLinks },
+                { title:home.footer.legal,     links:home.footer.legalLinks },
               ].map((s) => (
                 <div key={s.title}>
                   <h3 className="font-bold text-sm mb-4">{s.title}</h3>
@@ -616,10 +617,10 @@ const HomePage = () => {
                   <BookOpen className="w-4 h-4 text-white" />
                 </div>
                 <span className="font-bold text-sm">BlogHub</span>
-                <span className="text-xs text-muted-foreground ml-1">© 2025 All rights reserved.</span>
+                <span className="text-xs text-muted-foreground ml-1">{home.footer.rights}</span>
               </div>
               <div className="flex gap-5 text-sm text-muted-foreground">
-                {["Twitter","LinkedIn","GitHub"].map((l) => (
+                {home.footer.socials.map((l) => (
                   <a key={l} href="#" className="hover:text-foreground transition-colors">{l}</a>
                 ))}
               </div>
@@ -629,7 +630,7 @@ const HomePage = () => {
 
       </main>
 
-      {/* 🔍 Smart Blog Finder */}
+      {/* 🔍 Smart Blog Finder — kept as-is */}
       <SmartBlogFinder />
     </div>
   );

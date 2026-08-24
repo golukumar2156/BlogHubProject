@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://bloghubproject.onrender.com/api"
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://bloghub-cnz6.onrender.com/api"
 
 // ── Authenticated instance (with JWT) ──
 const axiosInstance = axios.create({
